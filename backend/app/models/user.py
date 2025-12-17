@@ -1,0 +1,39 @@
+# backend/app/models/user.py
+
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.orm import relationship
+
+from ..database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Basic profile fields
+    name = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    phone = Column(String(50), nullable=True)
+
+    # Authentication
+    hashed_password = Column(String(255), nullable=False)
+
+    # Role control: client / admin / kitchen
+    role = Column(String(20), nullable=False, default="client")
+
+    # Account activation (used by security.py)
+    is_active = Column(Boolean, default=True)
+
+    # Relationships
+    addresses = relationship(
+        "Address",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    bookings = relationship(
+        "Booking",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

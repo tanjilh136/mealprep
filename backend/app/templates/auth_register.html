@@ -1,0 +1,38 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-section">
+  <h2>Create Account</h2>
+  <p>Register a new user. Accounts are created as <strong>client</strong> by default.</p>
+
+  <form method="post" action="/auth/register">
+    <label>
+      Name
+      <input type="text" name="name" required>
+    </label>
+
+    <label>
+      Email
+      <input type="email" name="email" required>
+    </label>
+
+    <label>
+      Phone
+      <input type="text" name="phone">
+    </label>
+
+    <label>
+      Password
+      <input type="password" name="password" required>
+    </label>
+
+    <button type="submit" class="btn">Register</button>
+  </form>
+
+  <p class="note">
+    For development or API testing, you can also register via the JSON body in
+    <code>/docs</code>.
+  </p>
+</section>
+{% endblock %}

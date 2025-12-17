@@ -1,0 +1,29 @@
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-section">
+  <h2>Login</h2>
+  <p>This form sends your credentials to the API token endpoint.</p>
+
+  <form method="post" action="/auth/token">
+    <label>
+      Email
+      <input type="text" name="username" required>
+    </label>
+
+    <label>
+      Password
+      <input type="password" name="password" required>
+    </label>
+
+    <button type="submit" class="btn">Login</button>
+  </form>
+
+  <p class="note">
+    Use your email as the username. The response will be a JSON access token —
+    copy it and use it under “Authorize” in <code>/docs</code>.
+  </p>
+</section>
+{% endblock %}

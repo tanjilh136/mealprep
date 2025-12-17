@@ -1,0 +1,51 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard">
+  <h2>Admin Dashboard</h2>
+  <p>Welcome, {{ user.name }} ({{ user.email }})</p>
+
+  <h3>Management</h3>
+  <ul>
+    <li>
+      Manage users and roles:
+      <code>/admin/users</code>
+    </li>
+    <li>
+      Configure 14-day rotation menu (A/B dishes):
+      <code>/admin/menu</code>
+    </li>
+    <li>
+      Regions (lunch/dinner availability):
+      <code>/regions</code>
+    </li>
+    <li>
+      View all bookings:
+      <code>/admin/bookings</code>
+    </li>
+    <li>
+      Weekly summary (Wed–Tue):
+      <code>/admin/weekly-summary</code>
+    </li>
+  </ul>
+
+  <h3>Exports</h3>
+  <ul>
+    <li>
+      Today's kitchen CSV:
+      <code>/export/today/csv</code>
+    </li>
+    <li>
+      Full week CSV:
+      <code>/export/week/csv</code>
+    </li>
+    <li>
+      Driver sheet (text):
+      <code>/export/driver/today</code>
+    </li>
+  </ul>
+
+  <p>All endpoints documented in <a href="/docs">the API docs</a>.</p>
+</section>
+{% endblock %}

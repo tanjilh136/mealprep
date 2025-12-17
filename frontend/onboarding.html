@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>M•ESA — Onboarding</title>
+
+  <!-- Use your main stylesheet -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Optional: keep onboarding styling inside styles.css (recommended), so no extra file needed -->
+</head>
+
+<body class="onboarding-body onboarding-page">
+  <main class="onboarding-shell">
+    <!-- Progress (subtle) -->
+    <header class="onboarding-top">
+      <div class="onboarding-brand" aria-label="M•ESA">M•ESA</div>
+      <div class="onboarding-progress" aria-label="Progress">
+        <div class="onboarding-progress-bar" id="obProgressBar"></div>
+      </div>
+    </header>
+
+    <!-- Screen container -->
+    <section class="onboarding-screen" id="obScreen"></section>
+
+    <!-- Sticky actions -->
+    <footer class="onboarding-actions" id="obActions"></footer>
+  </main>
+
+  <!-- IMPORTANT: you already have applyLanguage(lang) in your site.
+       We'll reuse your language system by implementing a local fallback here too. -->
+  <script src="js/onboarding.js"></script>
+</body>
+</html>

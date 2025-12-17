@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard">
+  <h2>Kitchen Dashboard</h2>
+
+  <p>Welcome, {{ user.name }} ({{ user.email }})</p>
+
+  <h3>Daily Operations</h3>
+  <ul>
+    <li>
+      View bookings for a specific day:<br>
+      <code>/kitchen/day?day=YYYY-MM-DD</code>
+    </li>
+    <li>
+      Download today's kitchen CSV:<br>
+      <code>/export/today/csv</code>
+    </li>
+  </ul>
+
+  <h3>Tools</h3>
+  <p>
+    Use the interactive API interface at <a href="/docs">/docs</a> for quick access.
+  </p>
+</section>
+{% endblock %}

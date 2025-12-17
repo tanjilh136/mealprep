@@ -1,0 +1,43 @@
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard">
+  <h2>Client Dashboard</h2>
+
+  <p>Welcome, {{ user.name }} ({{ user.email }})</p>
+
+  <h3>Your Actions</h3>
+  <ul>
+    <li>Manage your 1–3 saved addresses:
+      <code>/addresses</code>
+    </li>
+    <li>Create bookings (1–2 meals, 15-minute slots):
+      <code>/booking</code>
+    </li>
+    <li>View all your bookings:
+      <code>/booking</code>
+    </li>
+    <li>Check your weekly pricing and minimum meal rules:
+      <code>/booking/week-pricing</code>
+    </li>
+    <li>View the current public weekly menu:
+      <code>/menu/public-week</code>
+    </li>
+  </ul>
+
+  <h3>Notes</h3>
+  <p>
+    Bookings follow the service week
+    <strong>Wednesday → Tuesday</strong>.
+    The cutoff for changes is
+    <strong>Monday 23:59</strong>.
+  </p>
+
+  <p>
+    Use the API interface at <a href="/docs">/docs</a> to make all changes
+    until the full frontend is finished.
+  </p>
+</section>
+{% e
