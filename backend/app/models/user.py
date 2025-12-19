@@ -22,6 +22,13 @@ class User(Base):
     # Role control: client / admin / kitchen
     role = Column(String(20), nullable=False, default="client")
 
+    # Slice 1+ (safe now)
+    # 'weekly' | 'subscriber' (nullable until onboarding/registration connects it)
+    client_type = Column(String(20), nullable=True)
+
+    # Founders plan flag (used in Step 10 later)
+    is_founder = Column(Boolean, default=False)
+
     # Account activation (used by security.py)
     is_active = Column(Boolean, default=True)
 

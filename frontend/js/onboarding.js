@@ -7,6 +7,11 @@
 */
 
 (() => {
+  // If you want zero hardcoding later:
+  // In onboarding.html set: <script>window.MESA_API_BASE="http://127.0.0.1:8000"</script>
+  // BEFORE loading onboarding.js
+  const API_BASE = window.MESA_API_BASE || "http://127.0.0.1:8000";
+
   const LS_LANG_KEY = "mesaLang";
   const DEFAULT_LANG = "pt";
 
@@ -66,21 +71,39 @@
       ob_s6_hint: "Escolhe 1 ou 2 horários (máximo 2).",
       ob_err_max_two: "Máximo 2 horários.",
 
-      ob_err_fill_address: "Preenche a etiqueta, morada, cidade e código postal.",
-      ob_err_pick_gym: "Seleciona um ginásio ou escolhe a opção de adicionar manualmente.",
-        // --- Step 11
-        ob_s11_title: "Legalmente, para te proteger:",
-        ob_s11_tc: "TERMOS E CONDIÇÕES",
-        ob_s11_pp: "POLÍTICA DE PRIVACIDADE",
-        ob_s11_accept: "Aceito os Termos e Condições e a Política de Privacidade.",
-        ob_s11_err: "Tens de aceitar para criar conta.",
+      ob_err_fill_address:
+        "Preenche a etiqueta, morada, cidade e código postal.",
+      ob_err_pick_gym:
+        "Seleciona um ginásio ou escolhe a opção de adicionar manualmente.",
 
-        // --- Step 12
-        ob_s12_title: "Bem-vindo à M•ESA.",
-        ob_s12_sub1: "A tua semana está pronta para começar.",
-        ob_s12_sub2: "Vais receber a primeira entrega na data que escolheste.",
-        ob_s12_sub3: "Podes gerir tudo no teu painel.",
-        ob_s12_btn: "Ir para o painel",
+      // --- Step 11
+      ob_s11_title: "Legalmente, para te proteger:",
+      ob_s11_tc: "TERMOS E CONDIÇÕES",
+      ob_s11_pp: "POLÍTICA DE PRIVACIDADE",
+      ob_s11_accept:
+        "Aceito os Termos e Condições e a Política de Privacidade.",
+      ob_s11_err: "Tens de aceitar para criar conta.",
+
+      // --- Step 12
+      ob_s12_title: "Bem-vindo à M•ESA.",
+      ob_s12_sub1: "A tua semana está pronta para começar.",
+      ob_s12_sub2: "Vais receber a primeira entrega na data que escolheste.",
+      ob_s12_sub3: "Podes gerir tudo no teu painel.",
+      ob_s12_btn: "Ir para o painel",
+      // --- Step 10
+      ob_s10_title: "Criar conta",
+      ob_s10_name: "Nome completo",
+      ob_s10_email: "Email",
+      ob_s10_phone: "Telemóvel",
+      ob_s10_pass: "Palavra-passe",
+      ob_s10_pass2: "Confirmar palavra-passe",
+      ob_s10_create: "Criar conta",
+      ob_s10_err_required: "Preenche todos os campos.",
+      ob_s10_err_email: "Email inválido.",
+      ob_s10_err_phone: "Número inválido.",
+      ob_s10_err_pass_len: "A palavra-passe deve ter pelo menos 8 caracteres.",
+      ob_s10_err_pass_match: "As palavras-passe não coincidem.",
+      ob_s10_err_backend: "Falha ao criar conta. Tenta novamente."
 
     },
 
@@ -101,7 +124,8 @@
       ob_s2_o6: "All of the above!",
       ob_err_pick_one_min: "Please choose at least one option.",
 
-      ob_s3_q: "How many times per week do you think about what you’re going to eat?",
+      ob_s3_q:
+        "How many times per week do you think about what you’re going to eat?",
       ob_s3_o1: "1–2 times",
       ob_s3_o2: "3–5 times",
       ob_s3_o3: "6+ times",
@@ -141,17 +165,32 @@
 
       ob_err_fill_address: "Fill label, address, city and postcode.",
       ob_err_pick_gym: "Select a gym or choose the manual option.",
-      ob_s11_title: "Legally, to protect you:",
-        ob_s11_tc: "TERMS & CONDITIONS",
-        ob_s11_pp: "PRIVACY POLICY",
-        ob_s11_accept: "I accept the Terms & Conditions and the Privacy Policy.",
-        ob_s11_err: "You must accept to create an account.",
 
-        ob_s12_title: "Welcome to M•ESA.",
-        ob_s12_sub1: "Your week is ready to start.",
-        ob_s12_sub2: "You’ll receive your first delivery on the date you chose.",
-        ob_s12_sub3: "You can manage everything in your dashboard.",
-        ob_s12_btn: "Go to dashboard",
+      ob_s11_title: "Legally, to protect you:",
+      ob_s11_tc: "TERMS & CONDITIONS",
+      ob_s11_pp: "PRIVACY POLICY",
+      ob_s11_accept: "I accept the Terms & Conditions and the Privacy Policy.",
+      ob_s11_err: "You must accept to create an account.",
+
+      ob_s12_title: "Welcome to M•ESA.",
+      ob_s12_sub1: "Your week is ready to start.",
+      ob_s12_sub2: "You’ll receive your first delivery on the date you chose.",
+      ob_s12_sub3: "You can manage everything in your dashboard.",
+      ob_s12_btn: "Go to dashboard",
+      // --- Step 10
+      ob_s10_title: "Create account",
+      ob_s10_name: "Full name",
+      ob_s10_email: "Email",
+      ob_s10_phone: "Phone",
+      ob_s10_pass: "Password",
+      ob_s10_pass2: "Confirm password",
+      ob_s10_create: "Create account",
+      ob_s10_err_required: "Please fill all fields.",
+      ob_s10_err_email: "Invalid email.",
+      ob_s10_err_phone: "Invalid phone number.",
+      ob_s10_err_pass_len: "Password must be at least 8 characters.",
+      ob_s10_err_pass_match: "Passwords do not match.",
+      ob_s10_err_backend: "Account creation failed. Please try again.",
 
     }
   };
@@ -183,11 +222,25 @@
     address: { label: "", line1: "", city: "", postcode: "", country: "Portugal" },
 
     preferredSlots: new Set(),
-    acceptedTerms: false,     // Step 11
-    clientType: null,         // "weekly" | "subscriber" | "founders" (use later)
-    isFounder: false, // true for first 100, later backend decides
+    acceptedTerms: false, // Step 11
 
+    clientType: null, // "weekly" | "subscriber"
+    isFounder: false, // future
 
+    // Step 7 / 7.1 (Slice 1)
+    weekStartISO: null, // "YYYY-MM-DD" Wednesday
+    firstWeekDays: [], // [{date, meals, dish_choice}, ... 7 items]
+    draftId: null, // UUID from backend
+    // behaviourGrid example:
+    // { Wednesday:{meal1:"meat",meal2:"blank"}, ... }
+    behaviourGrid: null,    // Step 10 (Account)
+    account: {
+      full_name: "",
+      email: "",
+      phone: "",
+      password: "",
+      password2: ""
+    }
   };
 
   const $screen = document.getElementById("obScreen");
@@ -215,11 +268,29 @@
     if (existing) existing.remove();
   }
 
+  function showError(msg) {
+    clearError();
+    const d = document.createElement("div");
+    d.className = "ob-error";
+    d.textContent = String(msg || "Something went wrong.");
+    $actions.prepend(d);
+  }
+
   function makePrimaryButton(labelKey, onClick, disabled = false) {
     const btn = document.createElement("button");
     btn.className = "btn primary";
     btn.type = "button";
     btn.textContent = t(labelKey);
+    btn.disabled = !!disabled;
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
+  function makeSecondaryButton(text, onClick, disabled = false) {
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.type = "button";
+    btn.textContent = text;
     btn.disabled = !!disabled;
     btn.addEventListener("click", onClick);
     return btn;
@@ -236,6 +307,18 @@
     clearError();
     $actions.prepend(makeError(errKey));
   }
+
+  function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+  }
+
+  function isValidPhone(phone) {
+    // permissive: digits + spaces + + () -
+    const v = String(phone || "").trim();
+    if (v.length < 7) return false;
+    return /^[0-9+\-\s()]+$/.test(v);
+  }
+
 
   function makeOption({ mode, name, value, labelKey, selected, onChange }) {
     const row = document.createElement("label");
@@ -264,6 +347,22 @@
     });
 
     return row;
+  }
+
+  function nextWednesdayISO() {
+    const now = new Date();
+    const day = now.getDay(); // Sun=0..Sat=6
+    const diff = (3 - day + 7) % 7; // Wed=3
+    const d = new Date(now);
+    d.setDate(now.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function addDaysISO(startISO, offset) {
+    const d = new Date(startISO + "T00:00:00");
+    d.setDate(d.getDate() + offset);
+    return d.toISOString().slice(0, 10);
   }
 
   function renderStep1() {
@@ -459,13 +558,10 @@
           selected: state.deliveryType === o.v,
           onChange: () => {
             state.deliveryType = o.v;
-
-            // Reset gym-specific state when switching away
             if (o.v !== "gym") {
               state.gymId = null;
               state.gymManual = false;
             }
-
             rerender();
           }
         })
@@ -475,7 +571,6 @@
     const detailWrap = document.createElement("div");
     detailWrap.className = "ob-detail";
 
-    // Home/Work/Other => address form
     if (state.deliveryType && state.deliveryType !== "gym") {
       const title = document.createElement("p");
       title.className = "ob-sub";
@@ -484,7 +579,6 @@
       detailWrap.appendChild(makeAddressForm());
     }
 
-    // Gym => dropdown + "not listed" checkbox => address form
     if (state.deliveryType === "gym") {
       const title = document.createElement("p");
       title.className = "ob-sub";
@@ -501,7 +595,7 @@
       select.addEventListener("change", () => {
         clearError();
         state.gymId = select.value || null;
-        if (state.gymId) state.gymManual = false; // if picked a gym, disable manual mode
+        if (state.gymId) state.gymManual = false;
         rerender();
       });
 
@@ -539,9 +633,7 @@
         addrTitle.textContent = t("ob_s5_address_title");
         detailWrap.appendChild(addrTitle);
 
-        // Pre-fill label suggestion if empty
         if (!state.address.label) state.address.label = getLang() === "en" ? "Gym" : "Ginásio";
-
         detailWrap.appendChild(makeAddressForm());
       }
     }
@@ -665,10 +757,7 @@
 
     const btnContinue = makePrimaryButton("ob_continue", () => {
       if (state.preferredSlots.size < 1) return placeError("ob_err_pick_one_min");
-
-      localStorage.setItem("mesaGoBooking", "1");
-      localStorage.setItem("mesaOnboarding", "1"); // NEW
-      window.location.href = "index.html";
+      goTo(7);
     });
 
     $screen.appendChild(h);
@@ -676,119 +765,470 @@
     $screen.appendChild(grid);
     $actions.appendChild(btnContinue);
   }
-function renderStep11() {
-  clearUI();
-  setProgress(11);
-  clearError();
 
-  const h = document.createElement("h1");
-  h.className = "ob-title";
-  h.textContent = t("ob_s11_title");
+  // ------------------ Step 7 (NEW UI, registration-only) ------------------
 
-  const linksWrap = document.createElement("div");
-  linksWrap.className = "ob-legal-links";
-
-  const tc = document.createElement("a");
-  tc.className = "ob-legal-link";
-  tc.href = "terms.html"; // change if needed
-  tc.target = "_blank";
-  tc.rel = "noopener";
-  tc.textContent = t("ob_s11_tc");
-
-  const pp = document.createElement("a");
-  pp.className = "ob-legal-link";
-  pp.href = "privacy.html"; // change if needed
-  pp.target = "_blank";
-  pp.rel = "noopener";
-  pp.textContent = t("ob_s11_pp");
-
-  linksWrap.appendChild(tc);
-  linksWrap.appendChild(pp);
-
-  const checkRow = document.createElement("label");
-  checkRow.className = "ob-legal-check";
-
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.checked = !!state.acceptedTerms;
-  cb.addEventListener("change", () => {
-    state.acceptedTerms = cb.checked;
+  function renderStep7() {
+    clearUI();
     clearError();
-  });
+    setProgress(7);
 
-  const txt = document.createElement("span");
-  txt.textContent = t("ob_s11_accept");
+    if (!state.weekStartISO) state.weekStartISO = nextWednesdayISO();
+    if (!Array.isArray(state.firstWeekDays) || state.firstWeekDays.length !== 7) {
+      state.firstWeekDays = Array.from({ length: 7 }, (_, i) => ({
+        date: addDaysISO(state.weekStartISO, i),
+        meals: 0,
+        dish_choice: null
+      }));
+    }
 
-  checkRow.appendChild(cb);
-  checkRow.appendChild(txt);
+    const $title = document.createElement("h2");
+    $title.textContent = "Step 7 — First Week Booking";
+    $screen.appendChild($title);
 
-  $screen.appendChild(h);
-  $screen.appendChild(linksWrap);
-  $screen.appendChild(checkRow);
+    const $note = document.createElement("p");
+    $note.textContent = "Choose meals for Wed→Tue. If 1 meal, pick A or B. If 2 meals, it’s A+B.";
+    $screen.appendChild($note);
 
-  const btn = makePrimaryButton("ob_continue", () => {
-    if (!state.acceptedTerms) return placeError("ob_s11_err");
-    goTo(12);
-  });
+    const dayNames = ["Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday"];
 
-  $actions.appendChild(btn);
-}
+    const $table = document.createElement("table");
+    $table.className = "ob-table";
 
+    const $thead = document.createElement("thead");
+    $thead.innerHTML = `
+      <tr>
+        <th>Day</th>
+        <th>Date</th>
+        <th>Meals</th>
+        <th>Dish (only if 1 meal)</th>
+      </tr>
+    `;
+    $table.appendChild($thead);
 
-function renderStep12() {
-  clearUI();
-  setProgress(12);
-  clearError();
+    const $tbody = document.createElement("tbody");
 
-  const wrap = document.createElement("div");
-  wrap.className = "ob-success";
+    state.firstWeekDays.forEach((d, idx) => {
+      const tr = document.createElement("tr");
 
-  const anim = document.createElement("div");
-  anim.className = "ob-success-anim";
-  anim.innerHTML = `<div class="ob-check"></div>`; // CSS anim does the magic
+      const mealsSel = document.createElement("select");
+      mealsSel.innerHTML = `
+        <option value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+      `;
+      mealsSel.value = String(d.meals);
 
-  const h = document.createElement("h1");
-  h.className = "ob-title";
-  h.textContent = t("ob_s12_title");
+      const dishSel = document.createElement("select");
+      dishSel.innerHTML = `
+        <option value="">—</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+      `;
+      dishSel.value = d.dish_choice || "";
+      dishSel.disabled = d.meals !== 1;
 
-  const p1 = document.createElement("p");
-  p1.className = "ob-line";
-  p1.textContent = t("ob_s12_sub1");
+      mealsSel.addEventListener("change", () => {
+        d.meals = Number(mealsSel.value);
+        if (d.meals !== 1) {
+          d.dish_choice = null;
+          dishSel.value = "";
+          dishSel.disabled = true;
+        } else {
+          dishSel.disabled = false;
+        }
+      });
 
-  const p2 = document.createElement("p");
-  p2.className = "ob-line";
-  p2.textContent = t("ob_s12_sub2");
+      dishSel.addEventListener("change", () => {
+        d.dish_choice = dishSel.value || null;
+      });
 
-  const p3 = document.createElement("p");
-  p3.className = "ob-line";
-  p3.textContent = t("ob_s12_sub3");
+      tr.innerHTML = `
+        <td>${dayNames[idx]}</td>
+        <td>${d.date}</td>
+      `;
 
-  wrap.appendChild(anim);
-  wrap.appendChild(h);
-  wrap.appendChild(p1);
-  wrap.appendChild(p2);
-  wrap.appendChild(p3);
+      const tdMeals = document.createElement("td");
+      tdMeals.appendChild(mealsSel);
 
-  $screen.appendChild(wrap);
+      const tdDish = document.createElement("td");
+      tdDish.appendChild(dishSel);
 
-  function redirectToDashboard() {
-    // prevent double redirects / weird back-button loops
-    if (localStorage.getItem("mesaOnboardingDone") === "1") return;
+      tr.appendChild(tdMeals);
+      tr.appendChild(tdDish);
+      $tbody.appendChild(tr);
+    });
 
-    localStorage.setItem("mesaOnboardingDone", "1");
-    localStorage.setItem("mesaGoBooking", "1"); // your index router already handles this
-    window.location.href = "index.html";
+    $table.appendChild($tbody);
+    $screen.appendChild($table);
+
+    const backBtn = makeSecondaryButton("Back", () => goTo(6));
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "btn primary";
+    nextBtn.type = "button";
+    nextBtn.textContent = "Continue";
+    nextBtn.addEventListener("click", async () => {
+      try {
+        clearError();
+
+        for (const d of state.firstWeekDays) {
+          if (d.meals === 1 && !["A", "B"].includes(d.dish_choice)) {
+            throw { detail: "For any day with 1 meal, you must choose A or B." };
+          }
+          if (![0, 1, 2].includes(d.meals)) {
+            throw { detail: "Meals must be 0, 1 or 2." };
+          }
+        }
+
+        const payload = {
+          week_start: state.weekStartISO,
+          days: state.firstWeekDays.map((d) => ({
+            date: d.date,
+            meals: d.meals,
+            dish_choice: d.meals === 1 ? d.dish_choice : null
+          }))
+        };
+
+        const res = await fetch(`${API_BASE}/onboarding/first-week`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw data;
+
+        state.draftId = data.draft_id;
+        state.behaviourGrid = data.behaviour.grid;
+
+        localStorage.setItem("mesaOnboardingDraftId", state.draftId);
+        localStorage.setItem("mesaOnboardingBehaviour", JSON.stringify(state.behaviourGrid));
+
+        goTo(71);
+      } catch (err) {
+        showError(typeof err?.detail === "string" ? err.detail : "Step 7 failed. Check your input.");
+        console.error(err);
+      }
+    });
+
+    $actions.appendChild(backBtn);
+    $actions.appendChild(nextBtn);
   }
 
-  // Auto redirect after the success animation has time to play
-  // (tweak 1200ms if your animation is longer/shorter)
-  setTimeout(redirectToDashboard, 1200);
+  // ------------------ Step 7.1 ------------------
 
-  // Fallback button (if user has slow device / blocked timers / wants control)
-  const btn = makePrimaryButton("ob_s12_btn", redirectToDashboard);
-  $actions.appendChild(btn);
-}
+  function renderStep71() {
+    clearUI();
+    clearError();
+    setProgress(7);
 
+    if (!state.draftId) state.draftId = localStorage.getItem("mesaOnboardingDraftId");
+    if (!state.behaviourGrid) {
+      const raw = localStorage.getItem("mesaOnboardingBehaviour");
+      state.behaviourGrid = raw ? JSON.parse(raw) : null;
+    }
+
+    if (!state.draftId || !state.behaviourGrid) {
+      showError("Missing onboarding draft. Please complete Step 7 again.");
+      $actions.appendChild(makeSecondaryButton("Back to Step 7", () => goTo(7)));
+      return;
+    }
+
+    const $title = document.createElement("h2");
+    $title.textContent = "Step 7.1 — Behaviour Pattern";
+    $screen.appendChild($title);
+
+    const $note = document.createElement("p");
+    $note.textContent = "This pattern will be used for future auto-generation only (never rewrites bookings).";
+    $screen.appendChild($note);
+
+    const $table = document.createElement("table");
+    $table.className = "ob-table";
+    $table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Food 1</th>
+          <th>Food 2</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+
+    const $tbody = $table.querySelector("tbody");
+    const order = ["Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday"];
+
+    order.forEach((day) => {
+      const row = document.createElement("tr");
+      const v = state.behaviourGrid[day] || { meal1: "blank", meal2: "blank" };
+      row.innerHTML = `
+        <td>${day}</td>
+        <td>${v.meal1}</td>
+        <td>${v.meal2}</td>
+      `;
+      $tbody.appendChild(row);
+    });
+
+    $screen.appendChild($table);
+
+    const backBtn = makeSecondaryButton("Back", () => goTo(7));
+    const weeklyBtn = makeSecondaryButton("Weekly (I’ll choose each week)", async () => {
+      await saveClientType("weekly");
+    });
+
+    const subBtn = document.createElement("button");
+    subBtn.className = "btn primary";
+    subBtn.type = "button";
+    subBtn.textContent = "Subscriber (auto-follow this pattern)";
+    subBtn.addEventListener("click", async () => {
+      await saveClientType("subscriber");
+    });
+
+    $actions.appendChild(backBtn);
+    $actions.appendChild(weeklyBtn);
+    $actions.appendChild(subBtn);
+
+    async function saveClientType(clientType) {
+      try {
+        clearError();
+
+        const res = await fetch(`${API_BASE}/onboarding/client-type`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ draft_id: state.draftId, client_type: clientType })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw data;
+
+        state.clientType = clientType;
+        localStorage.setItem("mesaOnboardingClientType", clientType);
+
+        // Slice 1 ends here logically; for now jump to Step 11.
+        goTo(10);
+      } catch (err) {
+        showError(typeof err?.detail === "string" ? err.detail : "Failed to save client type.");
+        console.error(err);
+      }
+    }
+  }
+  async function renderStep10() {
+    clearUI();
+    clearError();
+    setProgress(10);
+
+    const h = document.createElement("h1");
+    h.className = "ob-title";
+    h.textContent = t("ob_s10_title");
+
+    const form = document.createElement("div");
+    form.className = "ob-form-grid";
+
+    function inputField(labelKey, value, type = "text", onInput, full = true) {
+      const box = document.createElement("div");
+      if (full) box.classList.add("full");
+
+      const label = document.createElement("div");
+      label.className = "ob-sub";
+      label.textContent = t(labelKey);
+
+      const input = document.createElement("input");
+      input.type = type;
+      input.className = "ob-input";
+      input.value = value || "";
+      input.autocomplete = "off";
+
+      input.addEventListener("input", (e) => {
+        clearError();
+        onInput(e.target.value);
+      });
+
+      box.appendChild(label);
+      box.appendChild(input);
+      return box;
+    }
+
+    form.appendChild(inputField("ob_s10_name", state.account.full_name, "text", (v) => (state.account.full_name = v)));
+    form.appendChild(inputField("ob_s10_email", state.account.email, "email", (v) => (state.account.email = v)));
+    form.appendChild(inputField("ob_s10_phone", state.account.phone, "tel", (v) => (state.account.phone = v)));
+    form.appendChild(inputField("ob_s10_pass", state.account.password, "password", (v) => (state.account.password = v)));
+    form.appendChild(inputField("ob_s10_pass2", state.account.password2, "password", (v) => (state.account.password2 = v)));
+
+    $screen.appendChild(h);
+    $screen.appendChild(form);
+
+    const backBtn = makeSecondaryButton("Back", () => goTo(71));
+    const createBtn = makePrimaryButton("ob_s10_create", async () => {
+      try {
+        clearError();
+
+        const a = state.account;
+
+        if (!a.full_name || !a.email || !a.phone || !a.password || !a.password2) {
+          return placeError("ob_s10_err_required");
+        }
+        if (!isValidEmail(a.email)) return placeError("ob_s10_err_email");
+        if (!isValidPhone(a.phone)) return placeError("ob_s10_err_phone");
+        if (String(a.password).length < 8) return placeError("ob_s10_err_pass_len");
+        if (a.password !== a.password2) return placeError("ob_s10_err_pass_match");
+
+        // Always keep a local copy for this onboarding flow (safe + helps refresh)
+        localStorage.setItem("mesaOnboardingAccount", JSON.stringify({
+          full_name: a.full_name.trim(),
+          email: a.email.trim(),
+          phone: a.phone.trim()
+        }));
+
+        // Optional backend call (only if you define it)
+        // Example in onboarding.html BEFORE onboarding.js:
+        // <script>window.MESA_REGISTER_URL="http://127.0.0.1:8000/auth/register"</script>
+        const REGISTER_URL = window.MESA_REGISTER_URL;
+
+        if (REGISTER_URL) {
+          const payload = {
+            full_name: a.full_name.trim(),
+            email: a.email.trim(),
+            phone: a.phone.trim(),
+            password: a.password
+          };
+
+          const res = await fetch(REGISTER_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw (data || { detail: t("ob_s10_err_backend") });
+
+          // If backend returns token/user, store it here if you want:
+          // localStorage.setItem("mesaToken", data.access_token)
+          // localStorage.setItem("mesaUser", JSON.stringify(data.user))
+        }
+
+        goTo(11);
+      } catch (err) {
+        showError(typeof err?.detail === "string" ? err.detail : t("ob_s10_err_backend"));
+        console.error(err);
+      }
+    });
+
+    $actions.appendChild(backBtn);
+    $actions.appendChild(createBtn);
+  }
+
+  // ------------------ Step 11 ------------------
+
+  function renderStep11() {
+    clearUI();
+    setProgress(11);
+    clearError();
+
+    const h = document.createElement("h1");
+    h.className = "ob-title";
+    h.textContent = t("ob_s11_title");
+
+    const linksWrap = document.createElement("div");
+    linksWrap.className = "ob-legal-links";
+
+    const tc = document.createElement("a");
+    tc.className = "ob-legal-link";
+    tc.href = "terms.html";
+    tc.target = "_blank";
+    tc.rel = "noopener";
+    tc.textContent = t("ob_s11_tc");
+
+    const pp = document.createElement("a");
+    pp.className = "ob-legal-link";
+    pp.href = "privacy.html";
+    pp.target = "_blank";
+    pp.rel = "noopener";
+    pp.textContent = t("ob_s11_pp");
+
+    linksWrap.appendChild(tc);
+    linksWrap.appendChild(pp);
+
+    const checkRow = document.createElement("label");
+    checkRow.className = "ob-legal-check";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!state.acceptedTerms;
+    cb.addEventListener("change", () => {
+      state.acceptedTerms = cb.checked;
+      clearError();
+    });
+
+    const txt = document.createElement("span");
+    txt.textContent = t("ob_s11_accept");
+
+    checkRow.appendChild(cb);
+    checkRow.appendChild(txt);
+
+    $screen.appendChild(h);
+    $screen.appendChild(linksWrap);
+    $screen.appendChild(checkRow);
+
+    const btn = makePrimaryButton("ob_continue", () => {
+      if (!state.acceptedTerms) return placeError("ob_s11_err");
+      goTo(12);
+    });
+
+    $actions.appendChild(btn);
+  }
+
+  // ------------------ Step 12 ------------------
+
+  function renderStep12() {
+    clearUI();
+    setProgress(12);
+    clearError();
+
+    const wrap = document.createElement("div");
+    wrap.className = "ob-success";
+
+    const anim = document.createElement("div");
+    anim.className = "ob-success-anim";
+    anim.innerHTML = `<div class="ob-check"></div>`;
+
+    const h = document.createElement("h1");
+    h.className = "ob-title";
+    h.textContent = t("ob_s12_title");
+
+    const p1 = document.createElement("p");
+    p1.className = "ob-line";
+    p1.textContent = t("ob_s12_sub1");
+
+    const p2 = document.createElement("p");
+    p2.className = "ob-line";
+    p2.textContent = t("ob_s12_sub2");
+
+    const p3 = document.createElement("p");
+    p3.className = "ob-line";
+    p3.textContent = t("ob_s12_sub3");
+
+    wrap.appendChild(anim);
+    wrap.appendChild(h);
+    wrap.appendChild(p1);
+    wrap.appendChild(p2);
+    wrap.appendChild(p3);
+
+    $screen.appendChild(wrap);
+
+    function redirectToDashboard() {
+      if (localStorage.getItem("mesaOnboardingDone") === "1") return;
+      localStorage.setItem("mesaOnboardingDone", "1");
+      localStorage.setItem("mesaGoBooking", "1");
+      window.location.href = "index.html";
+    }
+
+    setTimeout(redirectToDashboard, 1200);
+
+    const btn = makePrimaryButton("ob_s12_btn", redirectToDashboard);
+    $actions.appendChild(btn);
+  }
+
+  // ------------------ Utilities ------------------
 
   function buildSlots() {
     return [...rangeSlots("11:00", "15:00", 15), ...rangeSlots("18:00", "22:00", 15)];
@@ -838,9 +1278,12 @@ function renderStep12() {
       case 4: return renderStep4();
       case 5: return renderStep5();
       case 6: return renderStep6();
+      case 7: return renderStep7();
+      case 71: return renderStep71();
+      case 10: return renderStep10();
+
       case 11: return renderStep11();
       case 12: return renderStep12();
-
       default: return renderStep1();
     }
   }

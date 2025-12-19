@@ -19,7 +19,9 @@ from .routers import (
     regions,
     users,
     menu,
+    onboarding,
 )
+
 from .core.security import require_role, get_current_user
 from .models.user import User
 
@@ -70,6 +72,8 @@ app.include_router(booking.router)
 app.include_router(admin.router)
 app.include_router(kitchen.router)
 app.include_router(exports.router)  # single unified exports router
+app.include_router(onboarding.router)
+
 
 # ---------------------------------------------------------------------------
 # HTML pages
