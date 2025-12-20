@@ -8,7 +8,7 @@ from .config import DATABASE_URL
 # SQLite needs check_same_thread=False when used with FastAPI
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+    connect_args={"check_same_thread": False, "timeout": 30} if DATABASE_URL.startswith("sqlite") else {}
 )
 
 SessionLocal = sessionmaker(

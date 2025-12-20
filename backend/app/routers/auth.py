@@ -17,8 +17,6 @@ from ..models.user import User
 from ..schemas.user import UserCreate, UserOut
 from pydantic import BaseModel, EmailStr, constr
 from passlib.hash import pbkdf2_sha256
-from app import models
-from app.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -84,7 +82,7 @@ def register_user(
 
 @router.post("/reset-password-simple")
 def reset_password_simple(payload: ResetPasswordSimple,
-                          db: Session = Depends(get_db)):
+                          db: Session = Depends(get_db_session)):
     """
     Offline-friendly reset:
     - User gives email + (optionally) phone + new password.
