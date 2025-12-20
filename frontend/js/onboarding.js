@@ -1005,13 +1005,89 @@
         localStorage.setItem("mesaOnboardingClientType", clientType);
 
         // Slice 1 ends here logically; for now jump to Step 11.
-        goTo(10);
+        goTo(8);
       } catch (err) {
         showError(typeof err?.detail === "string" ? err.detail : "Failed to save client type.");
         console.error(err);
       }
     }
   }
+
+    // ------------------ Step 8 — Explanation layer ------------------
+
+  async function renderStep8() {
+    clearUI();
+    clearError();
+    setProgress(8);
+
+    if (!state.draftId) state.draftId = localStorage.getItem("mesaOnboardingDraftId");
+    if (!state.draftId) {
+      showError("Missing onboarding draft. Please complete Step 7 again.");
+      $actions.appendChild(makeSecondaryButton("Back to Step 7", () => goTo(7)));
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/onboarding/step-8-explanation?draft_id=${encodeURIComponent(state.draftId)}`);
+      const data = await res.json();
+      if (!res.ok) throw data;
+
+      // Backend is authoritative
+      state.clientType = data.client_type;
+      localStorage.setItem("mesaOnboardingClientType", data.client_type);
+
+      const $title = document.createElement("h2");
+      $title.textContent = data.title || "Step 8";
+      $screen.appendChild($title);
+
+      (data.sections || []).forEach((sec) => {
+        if (sec.type === "summary" && sec.content) {
+          const p = document.createElement("p");
+          p.textContent = sec.content;
+          $screen.appendChild(p);
+          return;
+        }
+
+        if (sec.type === "rules" && Array.isArray(sec.items)) {
+          const ul = document.createElement("ul");
+          sec.items.forEach((it) => {
+            const li = document.createElement("li");
+            li.textContent = it;
+            ul.appendChild(li);
+          });
+          $screen.appendChild(ul);
+          return;
+        }
+
+        // informational blocks (subscriber)
+        if ((sec.type === "payment_notice" || sec.type === "iban_required") && sec.content) {
+          const box = document.createElement("div");
+          box.className = "ob-card"; // uses your existing styling; if not, it still renders fine
+          box.textContent = sec.content;
+          $screen.appendChild(box);
+          return;
+        }
+      });
+
+      const backBtn = makeSecondaryButton("Back", () => goTo(71));
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "btn primary";
+      nextBtn.type = "button";
+      nextBtn.textContent = "Continue";
+      nextBtn.addEventListener("click", () => goTo(10));
+
+      $actions.appendChild(backBtn);
+      $actions.appendChild(nextBtn);
+
+    } catch (err) {
+      showError(typeof err?.detail === "string" ? err.detail : "Failed to load Step 8 explanation.");
+      console.error(err);
+
+      $actions.appendChild(makeSecondaryButton("Back", () => goTo(71)));
+    }
+  }
+
+
   async function renderStep10() {
     clearUI();
     clearError();
@@ -1306,6 +1382,7 @@
       case 6: return renderStep6();
       case 7: return renderStep7();
       case 71: return renderStep71();
+      case 8: return renderStep8();
       case 10: return renderStep10();
 
       case 11: return renderStep11();

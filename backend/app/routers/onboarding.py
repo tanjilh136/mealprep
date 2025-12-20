@@ -18,6 +18,7 @@ from ..schemas.onboarding import (
     OnboardingClientTypeResponse,
     OnboardingFirstWeekRequest,
     OnboardingFirstWeekResponse,
+    OnboardingStep8ExplanationResponse,
 )
 from ..services.dish_type import infer_dish_type
 
@@ -132,3 +133,70 @@ def onboarding_set_client_type(payload: OnboardingClientTypeRequest, db: Session
     db.commit()
 
     return {"draft_id": payload.draft_id, "client_type": payload.client_type}
+
+@router.get("/step-8-explanation", response_model=OnboardingStep8ExplanationResponse)
+def onboarding_step8_explanation(draft_id: str, db: Session = Depends(get_db_session)):
+    """
+    Step 8 (read-only):
+    Returns an explanation layer based strictly on Step 7.1 client_type stored on the draft.
+    Frontend renders only; backend is authoritative.
+    """
+    draft = db.query(OnboardingDraft).filter(OnboardingDraft.id == draft_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="onboarding draft not found")
+
+    if not draft.client_type:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="client_type not set yet (complete Step 7.1 first)",
+        )
+
+    if draft.client_type == "subscriber":
+        return {
+            "client_type": "subscriber",
+            "title": "How Mesa will work for you",
+            "sections": [
+                {
+                    "type": "summary",
+                    "content": "Based on your choices, Mesa will automatically prepare and deliver meals each week.",
+                },
+                {
+                    "type": "rules",
+                    "items": [
+                        "Meals are assigned automatically each week",
+                        "Dishes are selected based on your preferences",
+                        "You don’t need to place weekly orders",
+                        "You can update preferences later in your account",
+                    ],
+                },
+                {
+                    "type": "payment_notice",
+                    "content": "To enable automatic service, we’ll set up a secure SEPA direct debit.",
+                },
+                {
+                    "type": "iban_required",
+                    "content": "Your IBAN is required to activate weekly deliveries.",
+                },
+            ],
+        }
+
+    # weekly
+    return {
+        "client_type": "weekly",
+        "title": "How weekly ordering works",
+        "sections": [
+            {
+                "type": "summary",
+                "content": "You’ll manage and confirm your meals manually each week.",
+            },
+            {
+                "type": "rules",
+                "items": [
+                    "Meals are not assigned automatically",
+                    "After onboarding, go to the Booking page to review your order",
+                    "You can modify meals before confirming",
+                    "You must pay every week before the cutoff for service to happen",
+                ],
+            },
+        ],
+    }

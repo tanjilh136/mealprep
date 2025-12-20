@@ -52,3 +52,19 @@ class OnboardingClientTypeRequest(BaseModel):
 class OnboardingClientTypeResponse(BaseModel):
     draft_id: str
     client_type: ClientType
+
+# --- Step 8: Rules / Explanation layer (read-only) ---
+
+Step8SectionType = Literal["summary", "rules", "payment_notice", "iban_required"]
+
+
+class Step8Section(BaseModel):
+    type: Step8SectionType
+    content: Optional[str] = None
+    items: Optional[List[str]] = None
+
+
+class OnboardingStep8ExplanationResponse(BaseModel):
+    client_type: ClientType
+    title: str
+    sections: List[Step8Section]
