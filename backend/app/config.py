@@ -3,14 +3,22 @@
 import os
 from datetime import date
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 
 # ---------------------------------------------------------------------------
 # Database
 # ---------------------------------------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./mealprep.db")
+# This config file location: backend/app/...
+BASE_DIR = Path(__file__).resolve().parent  # backend/app (or wherever config lives)
 
+# Adjust one level up if needed depending on where this file sits.
+# If config.py is inside backend/app/, then backend_dir = BASE_DIR.parent
+backend_dir = BASE_DIR.parent
+
+db_path = (backend_dir / "mealprep.db").resolve()
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{db_path.as_posix()}")
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------

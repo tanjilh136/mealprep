@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from ..models.onboarding import OnboardingDraft
 
 from ..core.deps import get_db_session
 from ..core.security import (
@@ -56,6 +57,14 @@ def register_user(
     existing = get_user_by_email(db, user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+    draft = None
+    if user_in.onboarding_draft_id:
+        draft = db.query(OnboardingDraft).filter(OnboardingDraft.id == user_in.onboarding_draft_id).first()
+        if not draft:
+            raise HTTPException(status_code=404, detail="onboarding draft not found")
+        if not draft.client_type:
+            raise HTTPException(status_code=422, detail="client_type not set for onboarding draft")
+
 
     user = User(
         name=user_in.name,
@@ -64,7 +73,10 @@ def register_user(
         hashed_password=get_password_hash(user_in.password),
         role="client",
         is_active=True,
+        client_type=(draft.client_type if draft else None),
+        onboarding_draft_id=(draft.id if draft else None),
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)

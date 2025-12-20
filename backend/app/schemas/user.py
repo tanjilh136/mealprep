@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    onboarding_draft_id: Optional[str] = None
 
 
 class UserOut(UserBase):

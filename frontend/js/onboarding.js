@@ -1058,12 +1058,14 @@
     $screen.appendChild(form);
 
     const backBtn = makeSecondaryButton("Back", () => goTo(71));
+
     const createBtn = makePrimaryButton("ob_s10_create", async () => {
       try {
         clearError();
 
         const a = state.account;
 
+        // Validation
         if (!a.full_name || !a.email || !a.phone || !a.password || !a.password2) {
           return placeError("ob_s10_err_required");
         }
@@ -1072,40 +1074,63 @@
         if (String(a.password).length < 8) return placeError("ob_s10_err_pass_len");
         if (a.password !== a.password2) return placeError("ob_s10_err_pass_match");
 
-        // Always keep a local copy for this onboarding flow (safe + helps refresh)
-        localStorage.setItem("mesaOnboardingAccount", JSON.stringify({
-          full_name: a.full_name.trim(),
-          email: a.email.trim(),
-          phone: a.phone.trim()
-        }));
-
-        // Optional backend call (only if you define it)
-        // Example in onboarding.html BEFORE onboarding.js:
-        // <script>window.MESA_REGISTER_URL="http://127.0.0.1:8000/auth/register"</script>
-        const REGISTER_URL = window.MESA_REGISTER_URL;
-
-        if (REGISTER_URL) {
-          const payload = {
+        // Local copy (safe)
+        localStorage.setItem(
+          "mesaOnboardingAccount",
+          JSON.stringify({
             full_name: a.full_name.trim(),
             email: a.email.trim(),
             phone: a.phone.trim(),
-            password: a.password
-          };
+          })
+        );
 
-          const res = await fetch(REGISTER_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
+        // Backend URLs
+        const REGISTER_URL = window.MESA_REGISTER_URL || (API_BASE + "/auth/register");
+        const TOKEN_URL = window.MESA_TOKEN_URL || (API_BASE + "/auth/token");
 
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw (data || { detail: t("ob_s10_err_backend") });
+        // Register payload (IMPORTANT: backend expects "name", not "full_name")
+        const payload = {
+          name: a.full_name.trim(),
+          email: a.email.trim(),
+          phone: a.phone.trim(),
+          password: a.password,
+          onboarding_draft_id: state.draftId,
+        };
 
-          // If backend returns token/user, store it here if you want:
-          // localStorage.setItem("mesaToken", data.access_token)
-          // localStorage.setItem("mesaUser", JSON.stringify(data.user))
+        // 1) REGISTER
+        const res = await fetch(REGISTER_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw (data || { detail: t("ob_s10_err_backend") });
+
+        // 2) AUTO-LOGIN (token)
+        // FastAPI OAuth2PasswordRequestForm expects form-urlencoded with "username" + "password"
+        const tokenRes = await fetch(TOKEN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            username: payload.email,
+            password: payload.password,
+          }),
+        });
+
+        const tokenData = await tokenRes.json().catch(() => ({}));
+        if (!tokenRes.ok) throw (tokenData || { detail: t("ob_s10_err_backend") });
+
+        if (!tokenData.access_token) {
+          throw { detail: "Token missing from /auth/token response" };
         }
 
+        // Store token
+        localStorage.setItem("mesaToken", tokenData.access_token);
+        // Optional: store token type if present
+        if (tokenData.token_type) localStorage.setItem("mesaTokenType", tokenData.token_type);
+
+        // Continue flow
         goTo(11);
       } catch (err) {
         showError(typeof err?.detail === "string" ? err.detail : t("ob_s10_err_backend"));
@@ -1116,6 +1141,7 @@
     $actions.appendChild(backBtn);
     $actions.appendChild(createBtn);
   }
+
 
   // ------------------ Step 11 ------------------
 

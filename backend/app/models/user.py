@@ -15,6 +15,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     phone = Column(String(50), nullable=True)
+    onboarding_draft_id = Column(String(36), nullable=True)
 
     # Authentication
     hashed_password = Column(String(255), nullable=False)
