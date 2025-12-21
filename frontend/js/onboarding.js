@@ -239,7 +239,8 @@
       email: "",
       phone: "",
       password: "",
-      password2: ""
+      password2: "",
+      iban: "",
     }
   };
 
@@ -348,6 +349,31 @@
 
     return row;
   }
+
+  function inputField(labelKey, value, type = "text", onInput, full = true) {
+    const box = document.createElement("div");
+    if (full) box.classList.add("full");
+
+    const label = document.createElement("div");
+    label.className = "ob-sub";
+    label.textContent = t(labelKey);
+
+    const input = document.createElement("input");
+    input.type = type;
+    input.className = "ob-input";
+    input.value = value || "";
+    input.autocomplete = "off";
+
+    input.addEventListener("input", (e) => {
+      clearError();
+      onInput(e.target.value);
+    });
+
+    box.appendChild(label);
+    box.appendChild(input);
+    return box;
+  }
+
 
   function nextWednesdayISO() {
     const now = new Date();
@@ -1062,11 +1088,28 @@
         // informational blocks (subscriber)
         if ((sec.type === "payment_notice" || sec.type === "iban_required") && sec.content) {
           const box = document.createElement("div");
-          box.className = "ob-card"; // uses your existing styling; if not, it still renders fine
+          box.className = "ob-card";
           box.textContent = sec.content;
           $screen.appendChild(box);
+
+          // If subscriber: show IBAN input right under the "iban_required" notice
+          if (sec.type === "iban_required" && state.clientType === "subscriber") {
+            const ibanField = inputField(
+              "ob_s8_iban_label",
+              state.account.iban,
+              (v) => (state.account.iban = v.toUpperCase()),
+
+              true
+            );
+            // Optional: hint/placeholder
+            const input = ibanField.querySelector("input");
+            if (input) input.placeholder = "PT50 0000 0000 0000 0000 0000 0";
+            $screen.appendChild(ibanField);
+          }
+
           return;
         }
+
       });
 
       const backBtn = makeSecondaryButton("Back", () => goTo(71));
@@ -1074,7 +1117,35 @@
       nextBtn.className = "btn primary";
       nextBtn.type = "button";
       nextBtn.textContent = "Continue";
-      nextBtn.addEventListener("click", () => goTo(10));
+      //button update
+      nextBtn.addEventListener("click", async () => {
+        // Only subscriber must provide IBAN
+        if (state.clientType === "subscriber") {
+          const iban = (state.account.iban || "").replace(/\s+/g, "").toUpperCase();
+
+          if (!iban) return placeError("ob_s8_err_iban_required");
+          // very basic IBAN sanity check (good enough for UI)
+          if (!/^[A-Z]{2}[0-9A-Z]{13,32}$/.test(iban)) return placeError("ob_s8_err_iban_invalid");
+
+          try {
+            const url = API_BASE + "/onboarding/iban";
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ draft_id: state.draftId, iban }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw data;
+            // persist locally too (nice-to-have)
+            localStorage.setItem("mesaOnboardingIban", iban);
+          } catch (e) {
+            return placeError("ob_s8_err_iban_invalid");
+          }
+        }
+
+        goTo(10);
+      });
+
 
       $actions.appendChild(backBtn);
       $actions.appendChild(nextBtn);
@@ -1170,7 +1241,7 @@
           email: a.email.trim(),
           phone: a.phone.trim(),
           password: a.password,
-          onboarding_draft_id: state.draftId,
+          draft_id: state.draftId,
         };
 
         // 1) REGISTER

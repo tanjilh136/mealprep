@@ -21,6 +21,7 @@ from ..schemas.onboarding import (
     OnboardingStep8ExplanationResponse,
 )
 from ..services.dish_type import infer_dish_type
+from ..schemas.onboarding import OnboardingIbanRequest
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
@@ -200,3 +201,34 @@ def onboarding_step8_explanation(draft_id: str, db: Session = Depends(get_db_ses
             },
         ],
     }
+
+
+def _normalize_iban(raw: str) -> str:
+    return (raw or "").replace(" ", "").upper().strip()
+
+def _basic_iban_check(iban: str) -> bool:
+    # basic sanity only; real validation can come later
+    if len(iban) < 15 or len(iban) > 34:
+        return False
+    if not iban[:2].isalpha():
+        return False
+    if not iban[2:4].isalnum():
+        return False
+    return True
+
+@router.post("/iban")
+def set_onboarding_iban(payload: OnboardingIbanRequest, db: Session = Depends(get_db_session)):
+    draft = db.query(OnboardingDraft).filter(OnboardingDraft.id == payload.draft_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="onboarding draft not found")
+
+    if draft.client_type != "subscriber":
+        raise HTTPException(status_code=422, detail="IBAN allowed only for subscriber")
+
+    iban = _normalize_iban(payload.iban)
+    if not _basic_iban_check(iban):
+        raise HTTPException(status_code=422, detail="invalid IBAN")
+
+    draft.iban = iban
+    db.commit()
+    return {"ok": True, "draft_id": draft.id}

@@ -40,6 +40,8 @@ class OnboardingDraft(Base):
         back_populates="draft",
         cascade="all, delete-orphan",
     )
+    iban = Column(String(34), nullable=True)
+
 
 
 class OnboardingBehaviorCell(Base):

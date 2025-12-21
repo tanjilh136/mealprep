@@ -68,3 +68,8 @@ class OnboardingStep8ExplanationResponse(BaseModel):
     client_type: ClientType
     title: str
     sections: List[Step8Section]
+
+class OnboardingIbanRequest(BaseModel):
+    draft_id: str
+    iban: str = Field(..., min_length=8, max_length=34)
+

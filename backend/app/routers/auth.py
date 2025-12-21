@@ -64,16 +64,30 @@ def register_user(
             raise HTTPException(status_code=422, detail="client_type not set for onboarding draft")
 
 
-    user = User(
-        name=user_in.name,
-        email=user_in.email,
-        phone=user_in.phone,
-        hashed_password=get_password_hash(user_in.password),
-        role="client",
-        is_active=True,
-        client_type=(draft.client_type if draft else None),
-        onboarding_draft_id=(draft.id if draft else None),
-    )
+        # -----------------------------------------------------------------------
+        # IBAN rule:
+        # - subscriber => IBAN is required and must be copied from onboarding draft
+        # - weekly      => IBAN must remain NULL on the user
+        # -----------------------------------------------------------------------
+        iban_value = None
+        if draft and draft.client_type == "subscriber":
+            # requires onboarding_drafts.iban column to exist and be set in Step 8
+            if not getattr(draft, "iban", None):
+                raise HTTPException(status_code=422, detail="IBAN required for subscriber")
+            iban_value = draft.iban
+
+        user = User(
+            name=user_in.name,
+            email=user_in.email,
+            phone=user_in.phone,
+            hashed_password=get_password_hash(user_in.password),
+            role="client",
+            is_active=True,
+            client_type=(draft.client_type if draft else None),
+            onboarding_draft_id=(draft.id if draft else None),
+            iban=iban_value,  # <-- NEW: copy from draft for subscribers only
+        )
+
 
     db.add(user)
     db.commit()
