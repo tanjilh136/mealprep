@@ -52,7 +52,7 @@ async function loadAddresses() {
     if (!ensureLoggedIn()) return;
 
     try {
-        const res = await fetch(`${API_BASE}/addresses`, {
+        const res = await fetch(`${window.API_BASE}/addresses`, {
             headers: getAuthHeaders(),
         });
 
@@ -163,7 +163,7 @@ async function deleteAddress(id) {
     if (!confirm("Delete this address?")) return;
 
     try {
-        const res = await fetch(`${API_BASE}/addresses/${id}`, {
+        const res = await fetch(`${window.API_BASE}/addresses/${id}`, {
             method: "DELETE",
             headers: getAuthHeaders(),
         });
@@ -268,10 +268,10 @@ if (addressForm) {
 
             if (editing) {
                 const id = addrIdInput.value;
-                url = `${API_BASE}/addresses/${id}`;
+                url = `${window.API_BASE}/addresses/${id}`;
                 method = "PUT";
             } else {
-                url = `${API_BASE}/addresses`;
+                url = `${window.API_BASE}/addresses`;
                 method = "POST";
             }
 

@@ -3,8 +3,35 @@
 // =============================
 // GLOBAL CONFIG
 // =============================
-const API_BASE = "http://127.0.0.1:8000";
 
+// Priority:
+// 1) localStorage override (handy for production/proxy)
+// 2) <meta name="api-base" content="..."> (optional)
+// 3) Same-origin "/api" (best for production behind reverse proxy)
+// 4) Local dev fallback (127.0.0.1:8000)
+function resolveApiBase() {
+  const fromStorage = localStorage.getItem("API_BASE");
+  if (fromStorage) return fromStorage.replace(/\/$/, "");
+
+  const meta = document.querySelector('meta[name="api-base"]');
+  if (meta && meta.content) return meta.content.replace(/\/$/, "");
+
+  // If you serve frontend + backend from same domain via reverse proxy, use /api
+  // (Example: https://mesa.pt/api)
+  const sameOriginApi = `${window.location.origin}/api`;
+
+  // Local dev fallback
+  const localDev = "http://127.0.0.1:8000";
+
+  // If running on localhost/127.0.0.1, prefer local dev backend
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") return localDev;
+
+  // Otherwise assume reverse-proxy production
+  return sameOriginApi;
+}
+
+const API_BASE = resolveApiBase();
 // Attach to window so all other scripts can use it
 window.API_BASE = API_BASE;
 
@@ -276,7 +303,7 @@ if (loginForm) {
             formData.append("username", email);
             formData.append("password", password);
 
-            const res = await fetch(`${API_BASE}/auth/token`, {
+            const res = await fetch(`${window.API_BASE}/auth/token`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -333,7 +360,7 @@ if (registerForm) {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/auth/register`, {
+            const res = await fetch(`${window.API_BASE}/auth/register`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -376,7 +403,7 @@ if (resetPasswordForm) {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/auth/reset-password-simple`, {
+            const res = await fetch(`${window.API_BASE}/auth/reset-password-simple`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -433,7 +460,7 @@ async function fetchCurrentUser() {
     }
 
     try {
-        const res = await fetch(`${API_BASE}/users/me`, {
+        const res = await fetch(`${window.API_BASE}/users/me`, {
             headers: {
                 "Authorization": "Bearer " + token,
             },

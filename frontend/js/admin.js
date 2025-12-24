@@ -47,7 +47,7 @@ async function loadRegions() {
     if (!ensureLoggedIn()) return;
 
     try {
-        const res = await fetch(`${API_BASE}/regions`, {
+        const res = await fetch(`${window.API_BASE}/regions`, {
             method: "GET",
             headers: getAuthHeaders()
         });
@@ -146,8 +146,8 @@ async function handleRegionSubmit(e) {
     const payload = { name, description: notes || null };
 
     const url = id
-        ? `${API_BASE}/regions/${id}`
-        : `${API_BASE}/regions`;
+        ? `${window.API_BASE}/regions/${id}`
+        : `${window.API_BASE}/regions`;
     const method = id ? "PUT" : "POST";
 
     try {
@@ -187,7 +187,7 @@ async function deleteRegion(id) {
     if (!confirm("Delete this region?")) return;
 
     try {
-        const res = await fetch(`${API_BASE}/regions/${id}`, {
+        const res = await fetch(`${window.API_BASE}/regions/${id}`, {
             method: "DELETE",
             headers: getAuthHeaders()
         });
@@ -236,7 +236,7 @@ async function loadMenuPlan() {
         const endStr = toYMD(weekEnd);
 
         const res = await fetch(
-            `${API_BASE}/admin/menu?start=${startStr}&end=${endStr}`,
+            `${window.API_BASE}/admin/menu?start=${startStr}&end=${endStr}`,
             {
                 method: "GET",
                 headers: getAuthHeaders(),
@@ -428,7 +428,7 @@ async function handleMenuDaySubmit(e) {
 
     try {
         // Backend upserts by date on POST /admin/menu
-        const res = await fetch(`${API_BASE}/admin/menu`, {
+        const res = await fetch(`${window.API_BASE}/admin/menu`, {
             method: "POST",
             headers: {
                 ...getAuthHeaders(),
@@ -472,7 +472,7 @@ async function handleMenuDaySubmit(e) {
 
 async function adminDownloadCsv(path, filename) {
     try {
-        const res = await fetch(`${API_BASE}${path}`, {
+        const res = await fetch(`${window.API_BASE}${path}`, {
             method: "GET",
             headers: getAuthHeaders(),
         });

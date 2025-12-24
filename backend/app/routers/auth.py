@@ -55,44 +55,52 @@ def register_user(
     existing = get_user_by_email(db, user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+
     draft = None
+    iban_value = None
+    client_type_value = None
+    onboarding_draft_id_value = None
+
     if user_in.onboarding_draft_id:
-        draft = db.query(OnboardingDraft).filter(OnboardingDraft.id == user_in.onboarding_draft_id).first()
+        draft = (
+            db.query(OnboardingDraft)
+            .filter(OnboardingDraft.id == user_in.onboarding_draft_id)
+            .first()
+        )
         if not draft:
             raise HTTPException(status_code=404, detail="onboarding draft not found")
         if not draft.client_type:
             raise HTTPException(status_code=422, detail="client_type not set for onboarding draft")
 
+        client_type_value = draft.client_type
+        onboarding_draft_id_value = draft.id
 
-        # -----------------------------------------------------------------------
         # IBAN rule:
-        # - subscriber => IBAN is required and must be copied from onboarding draft
-        # - weekly      => IBAN must remain NULL on the user
-        # -----------------------------------------------------------------------
-        iban_value = None
-        if draft and draft.client_type == "subscriber":
-            # requires onboarding_drafts.iban column to exist and be set in Step 8
+        # - subscriber => IBAN required and copied from draft
+        # - weekly     => IBAN must remain NULL
+        if draft.client_type == "subscriber":
             if not getattr(draft, "iban", None):
                 raise HTTPException(status_code=422, detail="IBAN required for subscriber")
             iban_value = draft.iban
 
-        user = User(
-            name=user_in.name,
-            email=user_in.email,
-            phone=user_in.phone,
-            hashed_password=get_password_hash(user_in.password),
-            role="client",
-            is_active=True,
-            client_type=(draft.client_type if draft else None),
-            onboarding_draft_id=(draft.id if draft else None),
-            iban=iban_value,  # <-- NEW: copy from draft for subscribers only
-        )
-
+    # Always instantiate user before db.add(user)
+    user = User(
+        name=user_in.name,
+        email=user_in.email,
+        phone=user_in.phone,
+        hashed_password=get_password_hash(user_in.password),
+        role="client",
+        is_active=True,
+        client_type=client_type_value,
+        onboarding_draft_id=onboarding_draft_id_value,
+        iban=iban_value,
+    )
 
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
 
 @router.post("/reset-password-simple")
 def reset_password_simple(payload: ResetPasswordSimple,

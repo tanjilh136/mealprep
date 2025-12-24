@@ -212,11 +212,11 @@ async function loadKitchenDeliveries() {
         // request kitchen day + menu in parallel
         const [resBookings, resWeekMenu] = await Promise.all([
             fetch(
-                `${API_BASE}/kitchen/day?day=${encodeURIComponent(dateStr)}`,
+                `${window.API_BASE}/kitchen/day?day=${encodeURIComponent(dateStr)}`,
                 { headers: getAuthHeaders() }
             ),
             fetch(
-                `${API_BASE}/menu/public-week?week_for=${encodeURIComponent(dateStr)}`
+                `${window.API_BASE}/menu/public-week?week_for=${encodeURIComponent(dateStr)}`
             ),
         ]);
 
@@ -336,7 +336,7 @@ async function exportKitchenCsv() {
 
     try {
         const url =
-            `${API_BASE}/kitchen/export/day?service_date=${encodeURIComponent(
+            `${window.API_BASE}/kitchen/export/day?service_date=${encodeURIComponent(
                 dateStr
             )}`;
 

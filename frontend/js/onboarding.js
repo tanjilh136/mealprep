@@ -244,14 +244,19 @@
     }
   };
 
-  // ------------------ Founder flag wiring (UI-only) ------------------
+  // Founder flag wiring (UI-only)
   const params = new URLSearchParams(window.location.search);
-  if (params.get("founder") === "1") {
+
+  const founderParam = (params.get("founder") || "").toLowerCase();
+  const isFounderFromUrl = (founderParam === "1" || founderParam === "true" || founderParam === "yes");
+
+  if (isFounderFromUrl) {
     state.isFounder = true;
     localStorage.setItem("mesaFounder", "1");
   } else {
     state.isFounder = localStorage.getItem("mesaFounder") === "1";
   }
+
 
 
   const $screen = document.getElementById("obScreen");
@@ -1420,11 +1425,14 @@
     $screen.appendChild(wrap);
 
     function redirectToDashboard() {
-      if (localStorage.getItem("mesaOnboardingDone") === "1") return;
+      // Never block the redirect. Button must always work.
       localStorage.setItem("mesaOnboardingDone", "1");
       localStorage.setItem("mesaGoBooking", "1");
-      window.location.href = "index.html";
+
+      // Use explicit relative path (more robust across hosting setups)
+      window.location.href = "./index.html";
     }
+
 
     setTimeout(redirectToDashboard, 1200);
 
