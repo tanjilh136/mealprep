@@ -1,7 +1,9 @@
 // frontend/js/menu.js
 // Public weekly menu view
 
-const menuContainer = document.getElementById("menuContainer");
+// NOTE: index.html uses #menuPlanList (not #menuContainer)
+const menuContainer = document.getElementById("menuPlanList");
+
 
 let currentMenuWeekDate = null;  // a Date inside the current displayed service week
 
@@ -10,6 +12,37 @@ function formatDate(d) {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
+}
+// FETCH MENU FROM BACKEND
+// =============================
+async function loadPublicMenu() {
+    try {
+        if (!menuContainer) {
+            console.error("Menu container not found (#menuPlanList). Check index.html IDs.");
+            return;
+        }
+
+        showPage("menu-section");
+        menuContainer.innerHTML = "<p>Loading menu...</p>";
+
+        const weekDateStr = currentMenuWeekDate ? formatDate(currentMenuWeekDate) : formatDate(new Date());
+
+        const res = await fetch(`${window.API_BASE}/menu/public-week?week_for=${weekDateStr}`);
+
+        if (!res.ok) {
+            menuContainer.innerHTML = "<p>Error loading menu.</p>";
+            return;
+        }
+
+        const data = await res.json();
+        renderMenu(data);
+
+    } catch (err) {
+        console.error("loadPublicMenu error:", err);
+        if (menuContainer) {
+            menuContainer.innerHTML = "<p>Error loading menu.</p>";
+        }
+    }
 }
 
 // =============================
@@ -111,37 +144,6 @@ function renderMenuWeek(days) {
 }
 
 // =============================
-// FETCH MENU FROM BACKEND
-// =============================
-async function loadPublicMenu() {
-    if (!menuContainer) return;
-
-    // default: if we don't have a "week date", use today
-    if (!currentMenuWeekDate) {
-        currentMenuWeekDate = new Date();
-    }
-
-    const weekDateStr = formatDate(currentMenuWeekDate);
-
-    menuContainer.innerHTML = "<p>Loading menu...</p>";
-
-    try {
-        const res = await fetch(
-            `${window.API_BASE || API_BASE}/menu/public-week?week_for=${weekDateStr}`
-        );
-
-        if (!res.ok) {
-            menuContainer.innerHTML = "<p>Failed to load menu.</p>";
-            return;
-        }
-
-        const data = await res.json();
-        renderMenuWeek(data);
-    } catch (err) {
-        console.error("loadPublicMenu error:", err);
-        menuContainer.innerHTML = "<p>Error loading menu.</p>";
-    }
-}
 
 function shiftMenuWeek(days) {
     if (!currentMenuWeekDate) {
