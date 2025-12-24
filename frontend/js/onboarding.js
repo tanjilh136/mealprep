@@ -244,6 +244,16 @@
     }
   };
 
+  // ------------------ Founder flag wiring (UI-only) ------------------
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("founder") === "1") {
+    state.isFounder = true;
+    localStorage.setItem("mesaFounder", "1");
+  } else {
+    state.isFounder = localStorage.getItem("mesaFounder") === "1";
+  }
+
+
   const $screen = document.getElementById("obScreen");
   const $actions = document.getElementById("obActions");
   const $bar = document.getElementById("obProgressBar");
@@ -1097,8 +1107,8 @@
             const ibanField = inputField(
               "ob_s8_iban_label",
               state.account.iban,
+              "text",
               (v) => (state.account.iban = v.toUpperCase()),
-
               true
             );
             // Optional: hint/placeholder
@@ -1143,7 +1153,11 @@
           }
         }
 
-        goTo(10);
+        if (state.isFounder) {
+          goTo(9);
+        } else {
+          goTo(10);
+        }
       });
 
 
@@ -1158,6 +1172,39 @@
     }
   }
 
+  function renderStep9() {
+    clearUI();
+    clearError();
+    setProgress(9);
+
+    const h = document.createElement("h2");
+    h.textContent = "Founders Plan";
+
+    const p1 = document.createElement("p");
+    p1.textContent =
+      "You are joining Mesa as a Founding Member. This plan is reserved for early users only.";
+
+    const p2 = document.createElement("p");
+    p2.textContent =
+      "The Founders Plan is limited to the first 100 clients. Once filled, it will never be available again.";
+
+    const p3 = document.createElement("p");
+    p3.textContent =
+      "Your benefits and pricing will remain locked as long as you keep your subscription active.";
+
+    $screen.appendChild(h);
+    $screen.appendChild(p1);
+    $screen.appendChild(p2);
+    $screen.appendChild(p3);
+
+    const backBtn = makeSecondaryButton("Back", () => goTo(8));
+    const continueBtn = makePrimaryButton("Continue", () => goTo(10));
+
+    $actions.appendChild(backBtn);
+    $actions.appendChild(continueBtn);
+  }
+
+
 
   async function renderStep10() {
     clearUI();
@@ -1171,35 +1218,22 @@
     const form = document.createElement("div");
     form.className = "ob-form-grid";
 
-    function inputField(labelKey, value, type = "text", onInput, full = true) {
-      const box = document.createElement("div");
-      if (full) box.classList.add("full");
-
-      const label = document.createElement("div");
-      label.className = "ob-sub";
-      label.textContent = t(labelKey);
-
-      const input = document.createElement("input");
-      input.type = type;
-      input.className = "ob-input";
-      input.value = value || "";
-      input.autocomplete = "off";
-
-      input.addEventListener("input", (e) => {
-        clearError();
-        onInput(e.target.value);
-      });
-
-      box.appendChild(label);
-      box.appendChild(input);
-      return box;
-    }
-
-    form.appendChild(inputField("ob_s10_name", state.account.full_name, "text", (v) => (state.account.full_name = v)));
-    form.appendChild(inputField("ob_s10_email", state.account.email, "email", (v) => (state.account.email = v)));
-    form.appendChild(inputField("ob_s10_phone", state.account.phone, "tel", (v) => (state.account.phone = v)));
-    form.appendChild(inputField("ob_s10_pass", state.account.password, "password", (v) => (state.account.password = v)));
-    form.appendChild(inputField("ob_s10_pass2", state.account.password2, "password", (v) => (state.account.password2 = v)));
+    // Use the GLOBAL inputField helper (do NOT redefine it here)
+    form.appendChild(
+      inputField("ob_s10_name", state.account.full_name, "text", (v) => (state.account.full_name = v))
+    );
+    form.appendChild(
+      inputField("ob_s10_email", state.account.email, "email", (v) => (state.account.email = v))
+    );
+    form.appendChild(
+      inputField("ob_s10_phone", state.account.phone, "tel", (v) => (state.account.phone = v))
+    );
+    form.appendChild(
+      inputField("ob_s10_pass", state.account.password, "password", (v) => (state.account.password = v))
+    );
+    form.appendChild(
+      inputField("ob_s10_pass2", state.account.password2, "password", (v) => (state.account.password2 = v))
+    );
 
     $screen.appendChild(h);
     $screen.appendChild(form);
@@ -1241,7 +1275,7 @@
           email: a.email.trim(),
           phone: a.phone.trim(),
           password: a.password,
-          draft_id: state.draftId,
+          draft_id: state.draftId, // keep this consistent with your backend
         };
 
         // 1) REGISTER
@@ -1255,7 +1289,6 @@
         if (!res.ok) throw (data || { detail: t("ob_s10_err_backend") });
 
         // 2) AUTO-LOGIN (token)
-        // FastAPI OAuth2PasswordRequestForm expects form-urlencoded with "username" + "password"
         const tokenRes = await fetch(TOKEN_URL, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -1272,12 +1305,9 @@
           throw { detail: "Token missing from /auth/token response" };
         }
 
-        // Store token
         localStorage.setItem("mesaToken", tokenData.access_token);
-        // Optional: store token type if present
         if (tokenData.token_type) localStorage.setItem("mesaTokenType", tokenData.token_type);
 
-        // Continue flow
         goTo(11);
       } catch (err) {
         showError(typeof err?.detail === "string" ? err.detail : t("ob_s10_err_backend"));
@@ -1288,6 +1318,7 @@
     $actions.appendChild(backBtn);
     $actions.appendChild(createBtn);
   }
+
 
 
   // ------------------ Step 11 ------------------
@@ -1454,8 +1485,8 @@
       case 7: return renderStep7();
       case 71: return renderStep71();
       case 8: return renderStep8();
+      case 9: return renderStep9();
       case 10: return renderStep10();
-
       case 11: return renderStep11();
       case 12: return renderStep12();
       default: return renderStep1();
