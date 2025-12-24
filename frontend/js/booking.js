@@ -1,5 +1,5 @@
 // frontend/js/booking.js
-// Booking UI – aligned with FastAPI backend (Wed→Tue week + cutoff)
+
 
 
 // state
@@ -112,7 +112,7 @@ async function loadBookingWeekMenu() {
     const weekForStr = toYMD(weekDates[0]);
 
     try {
-        const res = await fetch(`${API_BASE}/menu/public-week?week_for=${weekForStr}`);
+        const res = await fetch(`${window.API_BASE}/menu/public-week?week_for=${weekForStr}`);
         if (!res.ok) {
             console.error("Failed to load week menu for booking page");
             bookingWeekMenu = null;
@@ -385,7 +385,7 @@ async function loadClientAddresses() {
     bookingAddressSelect.innerHTML = "<option>Loading...</option>";
 
     try {
-        const res = await fetch(`${API_BASE}/addresses`, {
+        const res = await fetch(`${window.API_BASE}/addresses`, {
             headers: getAuthHeaders(),
         });
 
@@ -479,7 +479,7 @@ async function submitBooking(e) {
     };
 
     try {
-        const res = await fetch(`${API_BASE}/booking/`, {
+        const res = await fetch(`${window.API_BASE}/booking/`, {
             method: "POST",
             headers: {
                 ...getAuthHeaders(),
@@ -557,7 +557,7 @@ async function loadBookings() {
     if (!ensureLoggedIn()) return;
 
     try {
-        const res = await fetch(`${API_BASE}/booking/`, {
+        const res = await fetch(`${window.API_BASE}/booking/`, {
             headers: getAuthHeaders(),
         });
 
@@ -707,7 +707,7 @@ async function deleteBooking(id) {
     if (!confirm("Cancel this booking?")) return;
 
     try {
-        const res = await fetch(`${API_BASE}/booking/${id}`, {
+        const res = await fetch(`${window.API_BASE}/booking/${id}`, {
             method: "DELETE",
             headers: getAuthHeaders(),
         });
@@ -752,7 +752,7 @@ async function updatePricingFromBackend() {
 
     try {
         const res = await fetch(
-            `${API_BASE}/booking/week-pricing?week_for=${weekForStr}`,
+            `${window.API_BASE}/booking/week-pricing?week_for=${weekForStr}`,
             {
                 headers: getAuthHeaders(),
             }

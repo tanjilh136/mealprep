@@ -1,5 +1,53 @@
 // frontend/js/auth.js
 
+
+// --------- GLOBAL ERROR BANNER (shows why pages go blank) ----------
+(function attachGlobalErrorBanner() {
+  function show(msg) {
+    let el = document.getElementById("jsErrorBanner");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "jsErrorBanner";
+      el.style.position = "fixed";
+      el.style.left = "12px";
+      el.style.right = "12px";
+      el.style.bottom = "12px";
+      el.style.padding = "10px 12px";
+      el.style.background = "rgba(180, 20, 20, 0.95)";
+      el.style.color = "#fff";
+      el.style.zIndex = "99999";
+      el.style.borderRadius = "10px";
+      el.style.fontSize = "13px";
+      el.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      el.style.whiteSpace = "pre-wrap";
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+  }
+
+  window.addEventListener("error", (e) => {
+    show(`JS error:\n${e.message}\n${(e.filename || "").split("/").pop()}:${e.lineno}`);
+  });
+
+  window.addEventListener("unhandledrejection", (e) => {
+    show(`Promise error:\n${e.reason?.message || e.reason}`);
+  });
+
+  window.__showJsError = show;
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
 // =============================
 // GLOBAL CONFIG
 // =============================
@@ -31,9 +79,8 @@ function resolveApiBase() {
   return sameOriginApi;
 }
 
-const API_BASE = resolveApiBase();
-// Attach to window so all other scripts can use it
-window.API_BASE = API_BASE;
+// Single source of truth for API base
+window.API_BASE = window.API_BASE || window.MESA_API_BASE || resolveApiBase();
 
 
 // =============================

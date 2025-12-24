@@ -1,6 +1,6 @@
 // frontend/js/export.js
 // This file does NOT use ES modules. Everything is global-scope.
-// Assumes getToken() and API_BASE are available globally from auth.js.
+// Assumes getToken() and window.API_BASE are available globally from auth.js.
 
 // ------------------------
 // 1. Kitchen Export Today
@@ -12,7 +12,7 @@ async function exportTodayCSV() {
         return;
     }
 
-    const res = await fetch(`${API_BASE}/export/today/csv`, {
+    const res = await fetch(`${window.API_BASE}/export/today/csv`, {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -46,7 +46,7 @@ async function exportWeekCSV() {
         return;
     }
 
-    const res = await fetch(`${API_BASE}/export/week/csv`, {
+    const res = await fetch(`${window.API_BASE}/export/week/csv`, {
         headers: {
             "Authorization": "Bearer " + token
         }
@@ -80,7 +80,7 @@ async function exportDriverSheet() {
         return;
     }
 
-    const res = await fetch(`${API_BASE}/export/driver/today`, {
+    const res = await fetch(`${window.API_BASE}/export/driver/today`, {
         headers: {
             "Authorization": "Bearer " + token
         }

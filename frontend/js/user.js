@@ -329,3 +329,68 @@ function resetAddressForm() {
     addrDefaultInput.checked = false;
 }
 window.resetAddressForm = resetAddressForm;
+
+function renderBehaviourTableFromLocalStorage() {
+    const raw = localStorage.getItem("mesaOnboardingBehaviour");
+    if (!raw) return;
+
+    let grid;
+    try {
+        grid = JSON.parse(raw);
+    } catch {
+        return;
+    }
+    if (!grid || typeof grid !== "object") return;
+
+    const accountSection = document.getElementById("account-section");
+    if (!accountSection) return;
+
+    let card = document.getElementById("behaviourCard");
+    if (!card) {
+        card = document.createElement("section");
+        card.className = "card";
+        card.id = "behaviourCard";
+
+        const h = document.createElement("h3");
+        h.textContent = "Behaviour table";
+
+        const p = document.createElement("p");
+        p.className = "section-description";
+        p.textContent = "Based on your first-week onboarding booking (meat/fish pattern).";
+
+        const table = document.createElement("table");
+        table.className = "data-table";
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Meal 1</th>
+              <th>Meal 2</th>
+            </tr>
+          </thead>
+          <tbody id="behaviourTableBody"></tbody>
+        `;
+
+        card.appendChild(h);
+        card.appendChild(p);
+        card.appendChild(table);
+        accountSection.appendChild(card);
+    }
+
+    const body = document.getElementById("behaviourTableBody");
+    if (!body) return;
+
+    const order = ["Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday"];
+    body.innerHTML = "";
+
+    for (const day of order) {
+        const v = grid[day] || { meal1: "blank", meal2: "blank" };
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${day}</td>
+          <td>${v.meal1 || "blank"}</td>
+          <td>${v.meal2 || "blank"}</td>
+        `;
+        body.appendChild(tr);
+    }
+}

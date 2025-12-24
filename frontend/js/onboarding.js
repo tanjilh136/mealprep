@@ -10,7 +10,9 @@
   // If you want zero hardcoding later:
   // In onboarding.html set: <script>window.MESA_API_BASE="http://127.0.0.1:8000"</script>
   // BEFORE loading onboarding.js
-  const API_BASE = window.MESA_API_BASE || "http://127.0.0.1:8000";
+  // Do NOT redeclare API_BASE globally. Use window.API_BASE.
+  window.API_BASE = window.API_BASE || "http://127.0.0.1:8000";
+
 
   const LS_LANG_KEY = "mesaLang";
   const DEFAULT_LANG = "pt";
@@ -209,6 +211,32 @@
     );
   }
 
+  async function loadOnboardingWeekMenu(weekStartISO) {
+    // Uses backend: GET /menu/public-week?week_for=YYYY-MM-DD
+    const res = await fetch(`${window.API_BASE}/menu/public-week?week_for=${weekStartISO}`);
+    if (!res.ok) {
+      let msg = "Failed to load weekly menu.";
+      try {
+        const j = await res.json();
+        msg = j?.detail || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    return await res.json(); // array of {date, weekday, dish_a:{name...}, dish_b:{name...}}
+  }
+
+  function findOnboardingMenuForDate(menuWeek, dateISO) {
+    if (!Array.isArray(menuWeek)) return null;
+    return menuWeek.find((d) => String(d.date).slice(0, 10) === String(dateISO).slice(0, 10)) || null;
+  }
+
+  function safeDishName(dishObj, fallback) {
+    const name = dishObj?.name;
+    if (typeof name === "string" && name.trim()) return name.trim();
+    return fallback;
+  }
+
+
   const state = {
     step: 1,
 
@@ -405,6 +433,34 @@
     d.setDate(d.getDate() + offset);
     return d.toISOString().slice(0, 10);
   }
+
+    // --------------------------------------------
+  // MENU HELPERS (for Step 7 dish names)
+  // --------------------------------------------
+  async function loadOnboardingWeekMenu(weekStartISO) {
+    const res = await fetch(`${window.API_BASE}/menu/public-week?week_for=${weekStartISO}`);
+    if (!res.ok) {
+      let msg = "Failed to load weekly menu.";
+      try {
+        const j = await res.json();
+        msg = j?.detail || msg;
+      } catch {}
+      throw new Error(msg);
+    }
+    return await res.json();
+  }
+
+  function findOnboardingMenuForDate(menuWeek, dateISO) {
+    if (!Array.isArray(menuWeek)) return null;
+    return menuWeek.find((d) => String(d.date).slice(0, 10) === String(dateISO).slice(0, 10)) || null;
+  }
+
+  function safeDishName(dishObj, fallback) {
+    const name = dishObj?.name;
+    if (typeof name === "string" && name.trim()) return name.trim();
+    return fallback;
+  }
+
 
   function renderStep1() {
     clearUI();
@@ -822,6 +878,35 @@
         dish_choice: null
       }));
     }
+    // Ensure we have the menu for this onboarding week (so Step 7 shows real dish names)
+    if (state.weekMenuStartISO !== state.weekStartISO || !Array.isArray(state.weekMenu)) {
+      const $title = document.createElement("h2");
+      $title.textContent = "Step 7 — First Week Booking";
+
+      const $loading = document.createElement("p");
+      $loading.textContent = "Loading menu for your week...";
+
+      $screen.appendChild($title);
+      $screen.appendChild($loading);
+
+      if (!state.weekMenuLoading) {
+        state.weekMenuLoading = true;
+        loadOnboardingWeekMenu(state.weekStartISO)
+          .then((week) => {
+            state.weekMenu = week;
+            state.weekMenuStartISO = state.weekStartISO;
+          })
+          .catch((err) => {
+            console.error(err);
+            placeError("ob_err_generic");
+          })
+          .finally(() => {
+            state.weekMenuLoading = false;
+            rerender();
+          });
+      }
+      return;
+    }
 
     const $title = document.createElement("h2");
     $title.textContent = "Step 7 — First Week Booking";
@@ -861,11 +946,20 @@
       mealsSel.value = String(d.meals);
 
       const dishSel = document.createElement("select");
+
+      // Lookup real dish names for this date
+      const dayMenu = findOnboardingMenuForDate(state.weekMenu, d.date);
+
+      const labelA = safeDishName(dayMenu?.dish_a, "Dish A");
+      const labelB = safeDishName(dayMenu?.dish_b, "Dish B");
+
+      // Values stay A/B (backend expects that), labels become actual names
       dishSel.innerHTML = `
         <option value="">—</option>
-        <option value="A">A</option>
-        <option value="B">B</option>
+        <option value="A">${labelA}</option>
+        <option value="B">${labelB}</option>
       `;
+
       dishSel.value = d.dish_choice || "";
       dishSel.disabled = d.meals !== 1;
 
@@ -930,7 +1024,7 @@
           }))
         };
 
-        const res = await fetch(`${API_BASE}/onboarding/first-week`, {
+        const res = await fetch(`${window.API_BASE}/onboarding/first-week`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -1033,7 +1127,7 @@
       try {
         clearError();
 
-        const res = await fetch(`${API_BASE}/onboarding/client-type`, {
+        const res = await fetch(`${window.API_BASE}/onboarding/client-type`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ draft_id: state.draftId, client_type: clientType })
@@ -1069,7 +1163,7 @@
     }
 
     try {
-      const res = await fetch(`${API_BASE}/onboarding/step-8-explanation?draft_id=${encodeURIComponent(state.draftId)}`);
+      const res = await fetch(`${window.API_BASE}/onboarding/step-8-explanation?draft_id=${encodeURIComponent(state.draftId)}`);
       const data = await res.json();
       if (!res.ok) throw data;
 
@@ -1143,7 +1237,7 @@
           if (!/^[A-Z]{2}[0-9A-Z]{13,32}$/.test(iban)) return placeError("ob_s8_err_iban_invalid");
 
           try {
-            const url = API_BASE + "/onboarding/iban";
+            const url = window.API_BASE + "/onboarding/iban";
             const res = await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1271,8 +1365,8 @@
         );
 
         // Backend URLs
-        const REGISTER_URL = window.MESA_REGISTER_URL || (API_BASE + "/auth/register");
-        const TOKEN_URL = window.MESA_TOKEN_URL || (API_BASE + "/auth/token");
+        const REGISTER_URL = window.MESA_REGISTER_URL || (window.API_BASE + "/auth/register");
+        const TOKEN_URL = window.MESA_TOKEN_URL || (window.API_BASE + "/auth/token");
 
         // Register payload (IMPORTANT: backend expects "name", not "full_name")
         const payload = {
@@ -1425,13 +1519,21 @@
     $screen.appendChild(wrap);
 
     function redirectToDashboard() {
-      // Never block the redirect. Button must always work.
       localStorage.setItem("mesaOnboardingDone", "1");
       localStorage.setItem("mesaGoBooking", "1");
 
-      // Use explicit relative path (more robust across hosting setups)
-      window.location.href = "./index.html";
+      const url = window.location.href;
+
+      // If we are on onboarding.html, replace it safely
+      if (/onboarding\.html/i.test(url)) {
+        window.location.assign(url.replace(/onboarding\.html(\?.*)?$/i, "index.html"));
+        return;
+      }
+
+      // Otherwise, fallback to relative
+      window.location.assign("index.html");
     }
+
 
 
     setTimeout(redirectToDashboard, 1200);
