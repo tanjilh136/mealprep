@@ -228,7 +228,6 @@ function showPage(sectionId) {
 
 if (menuPageBtn) {
     menuPageBtn.addEventListener("click", () => {
-        showPage("menu-section");
         if (window.loadPublicMenu) {
             window.loadPublicMenu();
         }
