@@ -1,3 +1,4 @@
+//frontend/js/onboarding.js
 /* M•ESA Onboarding
    - Developer language: English
    - UI text: translations (PT default, EN optional)

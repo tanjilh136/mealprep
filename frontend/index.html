@@ -228,6 +228,7 @@
                 </div>
             </div>
         </section>
+</section> <!-- END #menu-section -->
 
     <!-- BOOKING PAGE -->
     <section id="booking-section" class="page hidden">
@@ -404,6 +405,28 @@
                 </thead>
                 <tbody id="addressList">
                 <tr><td colspan="6" data-i18n="account.table.empty">No addresses yet.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- BEHAVIOUR TABLE (BOTTOM) -->
+        <section class="card" id="behaviourCard" style="margin-top: 1rem;">
+            <h3>Behaviour Pattern</h3>
+            <p class="section-description">
+                Your onboarding behaviour table (read-only).
+            </p>
+
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Meals</th>
+                    <th>Dish</th>
+                    <th>Time Slot</th>
+                </tr>
+                </thead>
+                <tbody id="behaviourTableBody">
+                <tr><td colspan="4">No behaviour data yet.</td></tr>
                 </tbody>
             </table>
         </section>
@@ -609,6 +632,14 @@
     document.addEventListener("DOMContentLoaded", () => {
         console.log("Page router loaded");
 
+        function storageGet(key) {
+            try { return localStorage.getItem(key); } catch (_) { return null; }
+            }
+            function storageRemove(key) {
+            try { localStorage.removeItem(key); } catch (_) {}
+        }
+
+
         const menuBtn        = document.getElementById("menuPageBtn");
         const bookingBtn     = document.getElementById("bookingPageBtn");
         const accountBtn     = document.getElementById("accountBtn");
@@ -692,40 +723,50 @@
         // MENU button
         if (menuBtn) {
             menuBtn.addEventListener("click", () => {
-                showMenuAndScroll();
+                showPage("menu-section");
+                if (window.loadPublicMenu) window.loadPublicMenu();
+                closeMobileMenu();
             });
         }
+
 
         // BOOK
         if (bookingBtn) {
-            bookingBtn.addEventListener("click", () => {
+            bookingBtn.addEventListener("click", async () => {
                 showPage("booking-section");
-                if (window.initializeBookingPage) window.initializeBookingPage();
+                if (window.initializeBookingPage) await window.initializeBookingPage();
                 closeMobileMenu();
             });
         }
+
 
 
         if (accountBtn) {
-            accountBtn.addEventListener("click", () => {
+            accountBtn.addEventListener("click", async () => {
                 showPage("account-section");
+                if (window.initializeUserPage) await window.initializeUserPage();
                 closeMobileMenu();
             });
         }
+
 
         if (adminBtn) {
-            adminBtn.addEventListener("click", () => {
+            adminBtn.addEventListener("click", async () => {
                 showPage("admin-section");
+                if (window.initializeAdminPage) await window.initializeAdminPage();
                 closeMobileMenu();
             });
         }
 
+
         if (kitchenBtn) {
-            kitchenBtn.addEventListener("click", () => {
+            kitchenBtn.addEventListener("click", async () => {
                 showPage("kitchen-section");
+                if (window.initializeKitchenPage) await window.initializeKitchenPage();
                 closeMobileMenu();
             });
         }
+
 
         if (heroPlansBtn) {
             heroPlansBtn.addEventListener("click", () => {
@@ -750,9 +791,9 @@
         if (foundersCtaBtn) foundersCtaBtn.addEventListener("click", goToOnboarding, true);
 
         // If onboarding finished Step 6 and wants to go directly to booking
-        const goBooking = localStorage.getItem("mesaGoBooking");
+        const goBooking = storageGet("mesaGoBooking");
         if (goBooking === "1") {
-            localStorage.removeItem("mesaGoBooking");
+            storageRemove("mesaGoBooking");
             showPage("booking-section");
 
             // booking.js is lazy-init, so call it here once

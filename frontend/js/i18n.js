@@ -326,17 +326,26 @@
     }
   };
 
+  function safeGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+  }
+
+  function safeSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (_) {}
+  }
+
   function getLang() {
-    const saved = window.localStorage ? localStorage.getItem(STORAGE_KEY) : null;
+    const saved = safeGet(STORAGE_KEY);
     return (saved === "pt" || saved === "en") ? saved : DEFAULT_LANG;
   }
 
   function setLang(lang) {
     const v = (lang === "en") ? "en" : "pt";
-    if (window.localStorage) localStorage.setItem(STORAGE_KEY, v);
+    safeSet(STORAGE_KEY, v);
     applyLanguage(v);
     return v;
   }
+
 
   function t(key) {
     const lang = getLang();

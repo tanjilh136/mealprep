@@ -58,7 +58,7 @@
 // 3) Same-origin "/api" (best for production behind reverse proxy)
 // 4) Local dev fallback (127.0.0.1:8000)
 function resolveApiBase() {
-  const fromStorage = localStorage.getItem("API_BASE");
+  const fromStorage = storageGet("API_BASE");
   if (fromStorage) return fromStorage.replace(/\/$/, "");
 
   const meta = document.querySelector('meta[name="api-base"]');
@@ -86,17 +86,28 @@ window.API_BASE = window.API_BASE || window.MESA_API_BASE || resolveApiBase();
 // =============================
 // TOKEN STORAGE HELPERS
 // =============================
+function storageGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+}
+function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (_) {}
+}
+function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch (_) {}
+}
+
 function setToken(token) {
-    localStorage.setItem("mealprep_token", token);
+    storageSet("mealprep_token", token);
 }
 
 function getToken() {
-    return localStorage.getItem("mealprep_token");
+    return storageGet("mealprep_token");
 }
 
 function clearToken() {
-    localStorage.removeItem("mealprep_token");
+    storageRemove("mealprep_token");
 }
+
 
 function getAuthHeaders() {
     const token = getToken();

@@ -35,7 +35,8 @@ async function loadPublicMenu() {
         }
 
         const data = await res.json();
-        renderMenu(data);
+        renderMenuWeek(data);
+
 
     } catch (err) {
         console.error("loadPublicMenu error:", err);

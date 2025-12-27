@@ -42,7 +42,9 @@ if (addrLabelSelect && customLabelWrapper && customLabelInput) {
 async function initializeUserPage() {
     if (!ensureLoggedIn()) return;
     await loadAddresses();
+    renderBehaviourTableFromLocalStorage();
 }
+
 window.initializeUserPage = initializeUserPage;
 
 // --------------------------------------------
@@ -331,51 +333,21 @@ function resetAddressForm() {
 window.resetAddressForm = resetAddressForm;
 
 function renderBehaviourTableFromLocalStorage() {
-    const raw = localStorage.getItem("mesaOnboardingBehaviour");
+    let raw = null;
+    try {
+        raw = localStorage.getItem("mesaOnboardingBehaviour");
+    } catch (_) {
+        return;
+    }
     if (!raw) return;
 
     let grid;
     try {
         grid = JSON.parse(raw);
-    } catch {
+    } catch (_) {
         return;
     }
     if (!grid || typeof grid !== "object") return;
-
-    const accountSection = document.getElementById("account-section");
-    if (!accountSection) return;
-
-    let card = document.getElementById("behaviourCard");
-    if (!card) {
-        card = document.createElement("section");
-        card.className = "card";
-        card.id = "behaviourCard";
-
-        const h = document.createElement("h3");
-        h.textContent = "Behaviour table";
-
-        const p = document.createElement("p");
-        p.className = "section-description";
-        p.textContent = "Based on your first-week onboarding booking (meat/fish pattern).";
-
-        const table = document.createElement("table");
-        table.className = "data-table";
-        table.innerHTML = `
-          <thead>
-            <tr>
-              <th>Day</th>
-              <th>Meal 1</th>
-              <th>Meal 2</th>
-            </tr>
-          </thead>
-          <tbody id="behaviourTableBody"></tbody>
-        `;
-
-        card.appendChild(h);
-        card.appendChild(p);
-        card.appendChild(table);
-        accountSection.appendChild(card);
-    }
 
     const body = document.getElementById("behaviourTableBody");
     if (!body) return;
@@ -384,13 +356,16 @@ function renderBehaviourTableFromLocalStorage() {
     body.innerHTML = "";
 
     for (const day of order) {
-        const v = grid[day] || { meal1: "blank", meal2: "blank" };
+        const v = grid[day] || {};
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
-          <td>${day}</td>
-          <td>${v.meal1 || "blank"}</td>
-          <td>${v.meal2 || "blank"}</td>
+            <td>${day}</td>
+            <td>${v.meal1 || "-"}</td>
+            <td>${v.meal2 || "-"}</td>
+            <td>-</td>
         `;
         body.appendChild(tr);
     }
 }
+
