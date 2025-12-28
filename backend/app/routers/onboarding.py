@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ..config import MENU_ROTATION_START_DATE
 from ..core.deps import get_db_session
 from ..models.menu import MenuDay
-from ..models.onboarding import OnboardingDraft, OnboardingBehaviorCell
+from ..models.onboarding import OnboardingDraft, OnboardingBehaviorCell, OnboardingFirstWeekSelection
 from ..schemas.onboarding import (
     OnboardingClientTypeRequest,
     OnboardingClientTypeResponse,
@@ -109,6 +109,19 @@ def onboarding_first_week(payload: OnboardingFirstWeekRequest, db: Session = Dep
 
         db.add(OnboardingBehaviorCell(draft_id=draft_id, weekday_index=i, slot=1, pref=beh["meal1"]))
         db.add(OnboardingBehaviorCell(draft_id=draft_id, weekday_index=i, slot=2, pref=beh["meal2"]))
+
+        db.add(
+            OnboardingFirstWeekSelection(
+                draft_id=draft_id,
+                weekday_index=i,
+                delivery_date=day_sel.date,
+                meals=day_sel.meals,
+                dish_choice=day_sel.dish_choice,
+                address_id=getattr(day_sel, "address_id", None),
+                time_block=getattr(day_sel, "time_block", None),
+            )
+        )
+        
 
     db.commit()
 

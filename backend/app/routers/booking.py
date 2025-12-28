@@ -1,8 +1,8 @@
 # backend/app/routers/booking.py
-
+from pydantic import BaseModel
 from datetime import date, time, datetime, timedelta
-from typing import List, Dict
-
+from typing import List, Dict, Optional
+from ..models.onboarding import OnboardingDraft, OnboardingFirstWeekSelection, OnboardingBehaviorCell
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -24,6 +24,9 @@ from ..models.address import Address
 from ..models.user import User
 from ..schemas.booking import BookingCreate, BookingOut
 from ..services.pricing import compute_week_pricing
+from ..services.dish_type import infer_dish_type
+from ..models.menu import MenuDay
+from ..config import MENU_ROTATION_START_DATE
 
 router = APIRouter(prefix="/booking", tags=["Booking"])
 
@@ -82,6 +85,21 @@ def get_cutoff_for_week(week_start: date) -> datetime:
     """
     cutoff_date = week_start - timedelta(days=2)  # Monday
     return datetime(cutoff_date.year, cutoff_date.month, cutoff_date.day, 23, 59)
+
+# ---------------------------------------------------------------------------
+# Helper function for automation for subscriber to the booking
+# ---------------------------------------------------------------------------
+
+def _rotation_day_number(day: date) -> int:
+    delta_days = (day - MENU_ROTATION_START_DATE).days
+    return (delta_days % 14) + 1
+
+def _menu_for_date(db: Session, day: date) -> dict:
+    day_no = _rotation_day_number(day)
+    m = db.query(MenuDay).filter(MenuDay.day_number == day_no).first()
+    if not m:
+        return {"dish_a": None, "dish_b": None}
+    return {"dish_a": m.dish_a, "dish_b": m.dish_b}
 
 
 # ---------------------------------------------------------------------------
@@ -358,3 +376,186 @@ def get_week_pricing(
 
     result = compute_week_pricing(week_start, bookings)
     return result
+
+class BootstrapBookingsIn(BaseModel):
+    preferred_time_block: Optional[str] = None  # if frontend wants to pass one
+
+@router.post("/bootstrap-from-onboarding")
+def bootstrap_from_onboarding(
+    payload: BootstrapBookingsIn,
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_client),
+):
+    if not current_user.onboarding_draft_id:
+        raise HTTPException(status_code=400, detail="User has no onboarding draft.")
+
+    draft = (
+        db.query(OnboardingDraft)
+        .filter(OnboardingDraft.id == current_user.onboarding_draft_id)
+        .first()
+    )
+    if not draft:
+        raise HTTPException(status_code=404, detail="Onboarding draft not found.")
+
+    # Need an address (use default)
+    addr = (
+        db.query(Address)
+        .filter(Address.user_id == current_user.id)
+        .order_by(Address.is_default.desc(), Address.id.asc())
+        .first()
+    )
+    if not addr:
+        raise HTTPException(status_code=400, detail="No address found. Create an address first.")
+
+    selections = (
+        db.query(OnboardingFirstWeekSelection)
+        .filter(OnboardingFirstWeekSelection.draft_id == draft.id)
+        .order_by(OnboardingFirstWeekSelection.weekday_index.asc())
+        .all()
+    )
+    if not selections:
+        raise HTTPException(status_code=400, detail="No first-week selections found. Complete onboarding Step 7.")
+
+    # Default time block if nothing provided (first slot)
+    default_block = payload.preferred_time_block or ALL_SLOTS[0]
+
+    created = []
+    for s in selections:
+        if s.meals <= 0:
+            continue
+
+        # avoid duplicates
+        exists = (
+            db.query(BookingModel)
+            .filter(
+                BookingModel.user_id == current_user.id,
+                BookingModel.delivery_date == s.delivery_date,
+                BookingModel.status == "active",
+            )
+            .first()
+        )
+        if exists:
+            continue
+
+        dish_choice = None
+        if s.meals == 2:
+            dish_choice = "A+B"
+        else:
+            # meals==1 requires A/B
+            if s.dish_choice not in ("A", "B"):
+                raise HTTPException(status_code=422, detail=f"Invalid dish_choice for {s.delivery_date}")
+            dish_choice = s.dish_choice
+
+        booking = BookingModel(
+            user_id=current_user.id,
+            address_id=addr.id,
+            delivery_date=s.delivery_date,
+            time_block=s.time_block or default_block,
+            meals=s.meals,
+            dish_choice=dish_choice,
+            status="active",
+        )
+        db.add(booking)
+        created.append(booking)
+
+    db.commit()
+    return {"created": len(created)}
+
+@router.post("/ensure-week")
+def ensure_week_bookings(
+    week_start: date = Query(..., description="Wednesday date for service week start"),
+    db: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_client),
+):
+    if current_user.client_type != "subscriber":
+        return {"created": 0}
+
+    if not current_user.onboarding_draft_id:
+        raise HTTPException(status_code=400, detail="Subscriber has no onboarding draft.")
+
+    draft = db.query(OnboardingDraft).filter(OnboardingDraft.id == current_user.onboarding_draft_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="Onboarding draft not found.")
+
+    # address required
+    addr = (
+        db.query(Address)
+        .filter(Address.user_id == current_user.id)
+        .order_by(Address.is_default.desc(), Address.id.asc())
+        .first()
+    )
+    if not addr:
+        raise HTTPException(status_code=400, detail="No address found. Create an address first.")
+
+    # Behaviour prefs
+    cells = (
+        db.query(OnboardingBehaviorCell)
+        .filter(OnboardingBehaviorCell.draft_id == draft.id)
+        .all()
+    )
+    if not cells:
+        raise HTTPException(status_code=400, detail="No behaviour grid found.")
+
+    pref = {(c.weekday_index, c.slot): c.pref for c in cells}
+
+    # Template meals/time from first week selections (so subscriber repeats the same structure)
+    template = (
+        db.query(OnboardingFirstWeekSelection)
+        .filter(OnboardingFirstWeekSelection.draft_id == draft.id)
+        .order_by(OnboardingFirstWeekSelection.weekday_index.asc())
+        .all()
+    )
+    if not template:
+        raise HTTPException(status_code=400, detail="No first-week template found.")
+
+    created = 0
+    for s in template:
+        d = week_start + timedelta(days=s.weekday_index)
+        if s.meals <= 0:
+            continue
+
+        exists = (
+            db.query(BookingModel)
+            .filter(
+                BookingModel.user_id == current_user.id,
+                BookingModel.delivery_date == d,
+                BookingModel.status == "active",
+            )
+            .first()
+        )
+        if exists:
+            continue
+
+        if s.meals == 2:
+            dish_choice = "A+B"
+        else:
+            desired_type = pref.get((s.weekday_index, 1), "meat")  # meat|fish|blank
+            if desired_type == "blank":
+                continue
+
+            menu = _menu_for_date(db, d)
+            a_type = infer_dish_type(menu["dish_a"])
+            b_type = infer_dish_type(menu["dish_b"])
+
+            # pick A if it matches desired type, else B, else fallback A
+            if a_type == desired_type:
+                dish_choice = "A"
+            elif b_type == desired_type:
+                dish_choice = "B"
+            else:
+                dish_choice = "A"
+
+        booking = BookingModel(
+            user_id=current_user.id,
+            address_id=addr.id,
+            delivery_date=d,
+            time_block=s.time_block or ALL_SLOTS[0],
+            meals=s.meals,
+            dish_choice=dish_choice,
+            status="active",
+        )
+        db.add(booking)
+        created += 1
+
+    db.commit()
+    return {"created": created}
