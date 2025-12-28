@@ -1348,20 +1348,31 @@
           throw { detail: "Token missing from /auth/token response" };
         }
 
-        // Save token
-        localStorage.setItem("mesaToken", tokenData.access_token);
-        if (tokenData.token_type) localStorage.setItem("mesaTokenType", tokenData.token_type);
+        // Save token in BOTH keys (onboarding + main app)
+        const accessToken = tokenData.access_token;
+
+        try {
+          // main app key (auth.js / booking.js expects this)
+          localStorage.setItem("mealprep_token", accessToken);
+          localStorage.setItem("mealprep_token_type", tokenData.token_type || "bearer");
+
+          // keep onboarding keys too (harmless)
+          localStorage.setItem("mesaToken", accessToken);
+          if (tokenData.token_type) localStorage.setItem("mesaTokenType", tokenData.token_type);
+        } catch (e) {
+          console.warn("localStorage blocked; continuing with in-memory token", e);
+        }
 
         // --------------------------
         // STEP 6A PATCH (BOOTSTRAP)
         // --------------------------
-        const authHeaders = () => {
-          const tok = localStorage.getItem("mesaToken");
-          return tok ? { Authorization: `Bearer ${tok}` } : {};
+        const authHeaders = {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         };
 
         try {
-          // 3) Create address (default)
+          // 3) Create address (default) - only if we have enough data
           const addrPayload = {
             label: (state.address.label || "Home").trim(),
             line1: (state.address.line1 || "").trim(),
@@ -1369,28 +1380,40 @@
             city: (state.address.city || "").trim(),
             postal_code: (state.address.postcode || "").trim(),
             notes: null,
-            is_default: true
+            is_default: true,
           };
 
           if (addrPayload.line1 && addrPayload.city && addrPayload.postal_code) {
-            await fetch(`${window.API_BASE}/addresses`, {
+            const addrRes = await fetch(`${window.API_BASE}/addresses`, {
               method: "POST",
-              headers: { ...authHeaders(), "Content-Type": "application/json" },
-              body: JSON.stringify(addrPayload)
+              headers: authHeaders,
+              body: JSON.stringify(addrPayload),
             });
+
+            // if address fails, show it in console so we stop guessing
+            if (!addrRes.ok) {
+              const err = await addrRes.text().catch(() => "");
+              console.warn("Address create failed:", addrRes.status, err);
+            }
+          } else {
+            console.warn("Skipping address create (missing fields)", addrPayload);
           }
 
-          // 4) Bootstrap week1 bookings from onboarding draft / selections
-          await fetch(`${window.API_BASE}/booking/bootstrap-from-onboarding`, {
+          // 4) Bootstrap week1 bookings from onboarding selections
+          const bootRes = await fetch(`${window.API_BASE}/booking/bootstrap-from-onboarding`, {
             method: "POST",
-            headers: { ...authHeaders(), "Content-Type": "application/json" },
-            body: JSON.stringify({ preferred_time_block: null })
+            headers: authHeaders,
+            body: JSON.stringify({ preferred_time_block: null }),
           });
 
+          if (!bootRes.ok) {
+            const err = await bootRes.text().catch(() => "");
+            console.warn("Bootstrap failed:", bootRes.status, err);
+          }
         } catch (e) {
-          // Do not kill onboarding if bootstrap fails
           console.warn("Onboarding bootstrap failed:", e);
         }
+
 
         // Continue flow
         goTo(11);

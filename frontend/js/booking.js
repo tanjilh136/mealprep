@@ -349,6 +349,20 @@ async function initializeBookingPage() {
     }
 
     await loadClientAddresses();
+    // Subscriber Week 2+ auto-create bookings if missing
+    try {
+    const days = getActiveServiceWeekDates();
+    const weekStart = days[0]; // Wednesday Date object
+    const iso = weekStart.toISOString().slice(0, 10);
+
+    await fetch(`${window.API_BASE}/booking/ensure-week?week_start=${iso}`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+    });
+    } catch (e) {
+    console.warn("ensure-week failed", e);
+    }
+
     await loadBookings(); // builds bookedMealsByDate
     applyDayCapacityForSelectedDate(true);
 
